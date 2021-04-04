@@ -11,11 +11,11 @@ import * as Font from "expo-font";
 import { Ionicons } from "@expo/vector-icons";
 import { NavigationContainer } from "@react-navigation/native";
 import { createStackNavigator } from "@react-navigation/stack";
-import { ApolloClient, InMemoryCache, ApolloProvider } from "@apollo/client";
+import { ApolloProvider } from "@apollo/client";
 import apolloClient from "./graphql/config/client";
-
 import BottomTabNavigator from "./navigation/BottomTabNavigator";
 import useLinking from "./navigation/useLinking";
+import { RecoilRoot } from "recoil";
 
 const Stack = createStackNavigator();
 
@@ -25,7 +25,6 @@ export default function App(props) {
   const containerRef = React.useRef();
   const { getInitialState } = useLinking(containerRef);
 
-  // Load any resources or data that we need prior to rendering the app
   React.useEffect(() => {
     async function loadResourcesAndDataAsync() {
       try {
@@ -51,28 +50,25 @@ export default function App(props) {
     loadResourcesAndDataAsync();
   }, []);
 
-  const client = new ApolloClient({
-    uri: "localhost:4000/graphql",
-    cache: new InMemoryCache(),
-  });
-
   if (!isLoadingComplete && !props.skipLoadingScreen) {
     return null;
   } else {
     return (
-      <ApolloProvider client={apolloClient}>
-        <View style={styles.container}>
-          {Platform.OS === "ios" && <StatusBar barStyle="default" />}
-          <NavigationContainer
-            ref={containerRef}
-            initialState={initialNavigationState}
-          >
-            <Stack.Navigator>
-              <Stack.Screen name="Root" component={BottomTabNavigator} />
-            </Stack.Navigator>
-          </NavigationContainer>
-        </View>
-      </ApolloProvider>
+      <RecoilRoot>
+        <ApolloProvider client={apolloClient}>
+          <View style={styles.container}>
+            {Platform.OS === "ios" && <StatusBar barStyle="default" />}
+            <NavigationContainer
+              ref={containerRef}
+              initialState={initialNavigationState}
+            >
+              <Stack.Navigator>
+                <Stack.Screen name="Root" component={BottomTabNavigator} />
+              </Stack.Navigator>
+            </NavigationContainer>
+          </View>
+        </ApolloProvider>{" "}
+      </RecoilRoot>
     );
   }
 }
