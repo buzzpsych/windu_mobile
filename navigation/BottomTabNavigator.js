@@ -1,19 +1,14 @@
 import * as React from "react";
-import { useQuery } from "@apollo/client";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import TabBarIcon from "../components/TabBarIcon";
 import HomeScreen from "../screens/HomeScreen";
 import LinksScreen from "../screens/LinksScreen";
-import { useRecoilState } from "recoil";
-import { userSession } from "../recoil/atoms/User/UserSession";
-import { GET_USER } from "../graphql/queries/getUser";
 
 const BottomTab = createBottomTabNavigator();
 const INITIAL_ROUTE_NAME = "Home";
 
 const BottomTabNavigator = ({ navigation, route }) => {
   navigation.setOptions({ headerTitle: getHeaderTitle(route) });
-  const [user, setUser] = useRecoilState(userSession);
 
   return (
     <BottomTab.Navigator initialRouteName={INITIAL_ROUTE_NAME}>
