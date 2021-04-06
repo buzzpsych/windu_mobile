@@ -1,6 +1,7 @@
 import React, { useState } from "react";
-import { StyleSheet, View, Image, Modal } from "react-native";
-import { BottomSheet, ListItem, Button } from "react-native-elements";
+import { StyleSheet, View, Image, TouchableOpacity, Text } from "react-native";
+import { BottomSheet, ListItem } from "react-native-elements";
+import Button from "../../components/Button";
 
 const OnBoard = ({ navigation, route }) => {
   const [isVisible, setIsVisible] = useState(false);
@@ -16,6 +17,10 @@ const OnBoard = ({ navigation, route }) => {
       width: "100%",
       justifyContent: "center",
       alignItems: "center",
+      backgroundColor: "#F5A623",
+      width: "80%",
+      margin: "auto",
+      height: 40,
     },
   });
   const list = [
@@ -42,6 +47,7 @@ const OnBoard = ({ navigation, route }) => {
             alignItems: "center",
             height: 100,
             justifyContent: "center",
+            flex: 1,
           }}
         >
           <Image
@@ -64,6 +70,7 @@ const OnBoard = ({ navigation, route }) => {
             borderRadius: "1em",
             marginLeft: "auto",
             marginRight: "auto",
+            color: "white",
           }}
         >
           <Image
@@ -75,15 +82,14 @@ const OnBoard = ({ navigation, route }) => {
             resizeMode="contain"
           />
         </View>
-        <View style={styles.button}>
+        <View style={styles.container}>
           <Button
-            buttonStyle={{
-              backgroundColor: "red",
-              width: "80%",
-            }}
-            title="Login"
+            styles={styles.button}
+            color="red"
             onPress={() => setIsVisible(true)}
-          />
+          >
+            <Text>Login</Text>
+          </Button>
         </View>
       </View>
       <BottomSheet
