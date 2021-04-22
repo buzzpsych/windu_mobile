@@ -1,8 +1,8 @@
 import React, { useState } from "react";
-import { StyleSheet, View, Image, TouchableOpacity, Text } from "react-native";
-import { BottomSheet, ListItem } from "react-native-elements";
+import { StyleSheet, View, Image, Text } from "react-native";
+import { BottomSheet } from "react-native-elements";
 import Button from "../../components/Button";
-
+import Login from "../../components/Login";
 const OnBoard = ({ navigation, route }) => {
   const [isVisible, setIsVisible] = useState(false);
   const styles = StyleSheet.create({
@@ -23,16 +23,6 @@ const OnBoard = ({ navigation, route }) => {
       height: 40,
     },
   });
-  const list = [
-    { title: "List Item 1" },
-    { title: "List Item 2" },
-    {
-      title: "Cancel",
-      containerStyle: { backgroundColor: "red" },
-      titleStyle: { color: "white" },
-      onPress: () => setIsVisible(false),
-    },
-  ];
 
   return (
     <>
@@ -67,7 +57,6 @@ const OnBoard = ({ navigation, route }) => {
             width: "80%",
             alignItems: "center",
             justifyContent: "center",
-            borderRadius: "1em",
             marginLeft: "auto",
             marginRight: "auto",
             color: "white",
@@ -90,23 +79,14 @@ const OnBoard = ({ navigation, route }) => {
           >
             <Text>Login</Text>
           </Button>
+          <Text style={{ marginTop: 10 }}> register at www.windu.io</Text>
         </View>
       </View>
       <BottomSheet
         isVisible={isVisible}
         containerStyle={{ backgroundColor: "rgba(0.5, 0.25, 0, 0.2)" }}
       >
-        {list.map((l, i) => (
-          <ListItem
-            key={i}
-            containerStyle={l.containerStyle}
-            onPress={l.onPress}
-          >
-            <ListItem.Content>
-              <ListItem.Title style={l.titleStyle}>{l.title}</ListItem.Title>
-            </ListItem.Content>
-          </ListItem>
-        ))}
+        <Login onsubmit={(v) => setIsVisible(false)} />
       </BottomSheet>
     </>
   );
