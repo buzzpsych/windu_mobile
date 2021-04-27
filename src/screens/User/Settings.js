@@ -11,7 +11,10 @@ const Settings = () => {
 
   return (
     <View style={{ flex: 1, justifyContent: "flex-end" }}>
-      <Button onPress={handleLogout} styles={styles.button}>
+      <Button
+        onPress={handleLogout}
+        styles={[styles.button, { marginBottom: 50 }]}
+      >
         <Text>Logout</Text>
       </Button>
     </View>

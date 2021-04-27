@@ -1,8 +1,9 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { StyleSheet, View, Image, Text } from "react-native";
 import { BottomSheet } from "react-native-elements";
 import Button from "../../components/Button";
 import Login from "../../components/Login";
+
 const OnBoard = ({ navigation, route }) => {
   const [isVisible, setIsVisible] = useState(false);
   const styles = StyleSheet.create({
@@ -23,6 +24,12 @@ const OnBoard = ({ navigation, route }) => {
       height: 40,
     },
   });
+
+  const handleSubmit = (v) => {
+    console.log(v);
+
+    setIsVisible(false);
+  };
 
   return (
     <>
@@ -72,6 +79,9 @@ const OnBoard = ({ navigation, route }) => {
           />
         </View>
         <View style={styles.container}>
+          <Button onPress={() => console.log("sign")}>
+            <Text>SignIn</Text>
+          </Button>
           <Button
             styles={styles.button}
             color="red"
@@ -86,7 +96,7 @@ const OnBoard = ({ navigation, route }) => {
         isVisible={isVisible}
         containerStyle={{ backgroundColor: "rgba(0.5, 0.25, 0, 0.2)" }}
       >
-        <Login onsubmit={(v) => setIsVisible(false)} />
+        <Login onsubmit={handleSubmit} />
       </BottomSheet>
     </>
   );

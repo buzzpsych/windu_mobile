@@ -1,6 +1,5 @@
 import React from "react";
 import { StyleSheet, Text, View, Image } from "react-native";
-import { Badge } from "react-native-elements";
 import { createMaterialTopTabNavigator } from "@react-navigation/material-top-tabs";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -10,7 +9,8 @@ import PlannerActivity from "./PlannerActivity";
 import { navigationRef } from "../../common/rootNavigation";
 
 const Tab = createMaterialTopTabNavigator();
-const Home = ({ navigation, route }) => {
+
+const ActivityActions = ({ navigation, route }) => {
   const insets = useSafeAreaInsets();
 
   const styles = StyleSheet.create({
@@ -43,4 +43,4 @@ const Home = ({ navigation, route }) => {
   );
 };
 
-export default Home;
+export default ActivityActions;
