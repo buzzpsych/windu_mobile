@@ -6,7 +6,8 @@ import { onError } from "apollo-link-error";
 import { createUploadLink } from "apollo-upload-client"; // Allows FileList, File, Blob or ReactNativeFile instances within query or mutation variables and sends GraphQL multipart requests
 import { graphql, graphqlws } from "../../common/constants";
 
-const token = ""; // get value from storage
+import { readData, clearStorage } from "../../store/utils";
+
 const errorLink = onError(({ graphQLErrors, networkError, ...props }) => {
   if (networkError) {
     const error = JSON.stringify(networkError);
@@ -20,12 +21,8 @@ const errorLink = onError(({ graphQLErrors, networkError, ...props }) => {
 
   if (graphQLErrors) {
     graphQLErrors.forEach(({ message, locations, path, extensions }) => {
-      console.warn(
-        `[GraphQL error]: Message: ${message}, Location: ${locations}, Path: ${path}`
-      );
-
       if (extensions.code === "UNAUTHENTICATED") {
-        //
+        clearStorage();
       }
     });
   }
@@ -34,11 +31,11 @@ let httpLink = createUploadLink({
   uri: graphql,
 });
 
-const authLink = setContext((_, { headers }) => {
+const authLink = setContext(async (_, { headers }) => {
   return {
     headers: {
       ...headers,
-      authorization: token ? `Bearer ${token}` : "",
+      authorization: `Bearer ${await readData("@token")}`,
     },
   };
 });
@@ -46,14 +43,16 @@ const authLink = setContext((_, { headers }) => {
 httpLink = authLink.concat(httpLink);
 httpLink = errorLink.concat(httpLink);
 
-const wsLink = new WebSocketLink({
-  uri: graphqlws,
-  options: {
-    reconnect: true,
-    connectionParams: {
-      //  Authorization: token ? `Bearer ${token}` : "",
+const wsLink = setContext(async (_, { headers }) => {
+  new WebSocketLink({
+    uri: graphqlws,
+    options: {
+      reconnect: true,
+      connectionParams: {
+        Authorization: `Bearer ${await readData("@token")}`,
+      },
     },
-  },
+  });
 });
 
 const splitLink = split(

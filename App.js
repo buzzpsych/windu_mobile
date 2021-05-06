@@ -1,11 +1,11 @@
-import React from "react";
-import { StyleSheet, Image, Text, View, Pressable } from "react-native";
+import React, { useEffect } from "react";
+import { StyleSheet, Image, Text, ActivityIndicator } from "react-native";
 import "react-native-gesture-handler";
 import { NavigationContainer } from "@react-navigation/native";
 import { createStackNavigator } from "@react-navigation/stack";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { SafeAreaProvider } from "react-native-safe-area-context";
-import { useQuery } from "@apollo/client";
+import { useLazyQuery } from "@apollo/client";
 import { useRecoilState } from "recoil";
 import { userState } from "./src/recoil/atoms/user";
 
@@ -58,18 +58,24 @@ const App = ({}) => {
   const Stack = createStackNavigator();
   const Tab = createBottomTabNavigator();
 
-  useQuery(GET_USER, {
+  const [getUser, { loading }] = useLazyQuery(GET_USER, {
     fetchPolicy: "cache-and-network",
     onCompleted: ({ getUser }) => {
-      console.log(getUser);
-      // set user payload into recoil
-      // set token into storage
+      setUser(getUser);
     },
-    onError: () => {
+    onError: (err) => {
+      console.log(err);
       setUser(false);
-      // remove token from storage
     },
   });
+
+  useEffect(() => {
+    if (user) {
+      getUser();
+    }
+  }, [user]);
+
+  if (loading) return <ActivityIndicator size="large" color="#F5A623" />;
 
   if (newUser)
     return (
@@ -77,7 +83,8 @@ const App = ({}) => {
         <HomeOnboard handleOnClosePress={() => setNewUser(false)} />
       </SafeAreaProvider>
     );
-  if (user)
+
+  if (user) {
     return (
       <SafeAreaProvider>
         <NavigationContainer
@@ -163,22 +170,23 @@ const App = ({}) => {
         </NavigationContainer>
       </SafeAreaProvider>
     );
-
-  return (
-    <SafeAreaProvider>
-      <NavigationContainer>
-        <Stack.Navigator headerMode="none">
-          <Stack.Screen
-            name="OnBoard"
-            component={OnBoard}
-            options={{
-              title: "OnBoard",
-            }}
-          />
-        </Stack.Navigator>
-      </NavigationContainer>
-    </SafeAreaProvider>
-  );
+  } else {
+    return (
+      <SafeAreaProvider>
+        <NavigationContainer>
+          <Stack.Navigator headerMode="none">
+            <Stack.Screen
+              name="OnBoard"
+              component={OnBoard}
+              options={{
+                title: "OnBoard",
+              }}
+            />
+          </Stack.Navigator>
+        </NavigationContainer>
+      </SafeAreaProvider>
+    );
+  }
 };
 
 export default App;
