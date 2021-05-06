@@ -1,7 +1,15 @@
 import React, { useState } from "react";
 import { StyleSheet, View } from "react-native";
 import { Card, Input, Text } from "react-native-elements";
+import { Formik } from "formik";
+import * as Yup from "yup";
+
 import Button from "../Button";
+
+const validationSchema = Yup.object().shape({
+  email: Yup.string().required("Required"),
+  password: Yup.string().required("Required"),
+});
 
 const Login = ({ onsubmit }) => {
   const styles = StyleSheet.create({
@@ -18,35 +26,37 @@ const Login = ({ onsubmit }) => {
       height: 40,
     },
   });
-  const [fields, setFields] = useState({ email: "", password: "" });
 
-  const handleInput = (v, field) => {
-    setFields({ ...fields, [field]: v });
-  };
   return (
-    <Card styles={styles.card}>
-      <Input
-        containerStyle={{}}
-        disabledInputStyle={{ background: "#D8DDE6" }}
-        inputContainerStyle={{}}
-        errorMessage="Oops! that's not correct."
-        placeholder="Email"
-        onChangeText={(v) => handleInput(v, "email")}
-      />
-      <Input
-        secureTextEntry={true}
-        disabledInputStyle={{ background: "#D8DDE6" }}
-        inputContainerStyle={{}}
-        errorMessage="Oops! that's not correct."
-        placeholder="password"
-        onChangeText={(v) => handleInput(v, "password")}
-      />
-      <View>
-        <Button styles={styles.button} onPress={() => onsubmit(fields)}>
-          <Text>Login</Text>
-        </Button>
-      </View>
-    </Card>
+    <Formik
+      initialValues={{ email: "", password: "" }}
+      onSubmit={onsubmit}
+      validationSchema={validationSchema}
+    >
+      {({ handleChange, handleSubmit, errors }) => (
+        <Card styles={styles.card}>
+          <Input
+            containerStyle={{}}
+            disabledInputStyle={{ background: "#D8DDE6" }}
+            errorMessage={errors.email}
+            placeholder="Email"
+            onChangeText={handleChange("email")}
+          />
+          <Input
+            secureTextEntry={true}
+            disabledInputStyle={{ background: "#D8DDE6" }}
+            errorMessage={errors.password}
+            placeholder="password"
+            onChangeText={handleChange("password")}
+          />
+          <View>
+            <Button styles={styles.button} onPress={handleSubmit}>
+              <Text>Login</Text>
+            </Button>
+          </View>
+        </Card>
+      )}
+    </Formik>
   );
 };
 
