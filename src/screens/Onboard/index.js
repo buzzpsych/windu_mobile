@@ -35,13 +35,12 @@ const OnBoard = () => {
   const [login, { loadingLogin }] = useMutation(LOGIN, {
     onError: (error) => alert(error),
     onCompleted: ({ login }) => {
-      console.log("login");
       const { token, createdAt, user } = login;
       const authToken = {
         key: token,
-        expire: moment(new Date(createdAt)).add(10, "minutes"),
+        expire: moment(new Date(createdAt)).add(24, "hours"),
       };
-      console.log(token);
+
       saveData("@token", JSON.stringify(authToken));
       saveData("@user", JSON.stringify(user));
       setUser(user);
@@ -87,7 +86,6 @@ const OnBoard = () => {
   };
 
   const handleSubmit = (values) => {
-    console.log(values);
     login({ variables: values });
   };
 

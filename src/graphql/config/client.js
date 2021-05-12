@@ -4,10 +4,10 @@ import { WebSocketLink } from "@apollo/client/link/ws";
 import { getMainDefinition } from "@apollo/client/utilities";
 import { onError } from "apollo-link-error";
 import { get } from "lodash";
-import { TokenRefreshLink } from "apollo-link-token-refresh";
+import moment from "moment";
 import { createUploadLink } from "apollo-upload-client"; // Allows FileList, File, Blob or ReactNativeFile instances within query or mutation variables and sends GraphQL multipart requests
 import { graphql, graphqlws } from "../../common/constants";
-import { readData, clearStorage } from "../../store/utils";
+import { readData, saveData } from "../../store/utils";
 
 const errorLink = onError(({ graphQLErrors, networkError, ...props }) => {
   if (networkError) {
@@ -49,15 +49,24 @@ const refreshTokenLink = new ApolloLink(async (operation, forward) => {
           query: `mutation {
                       refreshUserToken(userId: "${userObject._id}") {
                         token
+                        createdAt
                       }
                     }`,
         }),
       });
       const { data } = await response.json();
-      const { refreshUserToken } = data;
-      console.log(refreshUserToken);
+      const {
+        refreshUserToken: { createdAt, token },
+      } = data;
+
+      const authToken = {
+        key: token,
+        expire: moment(new Date(createdAt)).add(24, "hours"),
+      };
+
+      saveData("@token", JSON.stringify(authToken));
     } catch (error) {
-      console.log("redirect to login");
+      alert(error);
     }
   }
 
