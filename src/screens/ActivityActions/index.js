@@ -34,7 +34,7 @@ const ActivityActions = ({ navigation, route }) => {
       }}
       style={styles.container}
       initialRouteName="Timer"
-      ref={navigationRef}
+      //ref={navigationRef}
     >
       <Tab.Screen name="Timer" component={Timer} />
       <Tab.Screen name="Continue" component={ContinueActivity} />

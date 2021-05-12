@@ -1,24 +1,26 @@
-import React, { useState, useEffect } from "react";
-import { StyleSheet, View, Image, Text } from "react-native";
+import React, { useState } from "react";
+import { View, Image, Text } from "react-native";
 import { useMutation } from "@apollo/client";
 import { BottomSheet } from "react-native-elements";
+import moment from "moment";
 import Button from "../../components/Button";
 import Login from "../../components/Login";
 import { LOGIN_WITH_GOOGLE } from "../../graphql/mutations/user/googleLogin";
+import { LOGIN } from "../../graphql/mutations/user/login";
 import * as Google from "expo-google-app-auth"; //google auth libraries
 import * as Localization from "expo-localization";
 import { saveData } from "../../store/utils";
 import googleBtnImage from "../../../assets/btn_google.png";
-
 import { useRecoilState } from "recoil";
 import { userState } from "../../recoil/atoms/user";
+import styles from "./styles";
 
-const OnBoard = ({ navigation, route }) => {
+const OnBoard = () => {
   const [user, setUser] = useRecoilState(userState);
+  const [isVisible, setIsVisible] = useState(false);
+
   const [googleLogin, { loadingGoogle }] = useMutation(LOGIN_WITH_GOOGLE, {
-    onError: (error) => {
-      alert(error);
-    },
+    onError: (error) => alert(error),
     onCompleted: async (data) => {
       saveData("@token", data?.googleLogin?.token);
       setUser(true);
@@ -30,23 +32,20 @@ const OnBoard = ({ navigation, route }) => {
     },
   });
 
-  const [isVisible, setIsVisible] = useState(false);
-  const styles = StyleSheet.create({
-    container: {
-      flex: 1,
-      backgroundColor: "#fff",
-      alignItems: "center",
-      justifyContent: "center",
-    },
-    button: {
-      marginTop: 10,
-      width: "100%",
-      justifyContent: "center",
-      alignItems: "center",
-      backgroundColor: "#F5A623",
-      width: "50%",
-      margin: "auto",
-      height: 40,
+  const [login, { loadingLogin }] = useMutation(LOGIN, {
+    onError: (error) => alert(error),
+    onCompleted: ({ login }) => {
+      console.log("login");
+      const { token, createdAt, user } = login;
+      const authToken = {
+        key: token,
+        expire: moment(new Date(createdAt)).add(10, "minutes"),
+      };
+      console.log(token);
+      saveData("@token", JSON.stringify(authToken));
+      saveData("@user", JSON.stringify(user));
+      setUser(user);
+      setIsVisible(false);
     },
   });
 
@@ -87,86 +86,52 @@ const OnBoard = ({ navigation, route }) => {
     }
   };
 
-  const handleSubmit = (v) => {
-    console.log(v);
-
-    setIsVisible(false);
-  };
-
-  const login = () => {
-    Glogin();
+  const handleSubmit = (values) => {
+    console.log(values);
+    login({ variables: values });
   };
 
   return (
     <>
-      <View
-        style={{
-          flex: 1,
-          backgroundColor: "#fff",
-        }}
-      >
-        <View
-          style={{
-            alignItems: "center",
-            height: 100,
-            justifyContent: "center",
-            flex: 1,
-          }}
-        >
+      <View style={styles.mainContainer}>
+        <View style={styles.subContainer}>
           <Image
-            style={{ height: 50, width: 50 }}
+            style={styles.logo}
             source={{
-              uri:
-                "https://windu.s3.us-east-2.amazonaws.com/assets/mobile/logo.png",
+              uri: "https://windu.s3.us-east-2.amazonaws.com/assets/mobile/logo.png",
             }}
             resizeMode="contain"
           />
         </View>
 
-        <View
-          style={{
-            backgroundColor: "#f0f2f5",
-            height: 400,
-            width: "80%",
-            alignItems: "center",
-            justifyContent: "center",
-            marginLeft: "auto",
-            marginRight: "auto",
-            color: "white",
-          }}
-        >
+        <View style={styles.imgContainer}>
           <Image
-            style={{ height: "100%", width: "100%" }}
+            style={styles.img}
             source={{
-              uri:
-                "https://windu.s3.us-east-2.amazonaws.com/assets/mobile/mobile_1.png",
+              uri: "https://windu.s3.us-east-2.amazonaws.com/assets/mobile/mobile_1.png",
             }}
             resizeMode="contain"
           />
         </View>
         <View style={styles.container}>
-          <Button onPress={login}>
+          <Button onPress={Glogin}>
             <Image
               style={{ margin: "auto", height: 50 }}
               source={googleBtnImage}
               resizeMode="contain"
             />
           </Button>
-          <Button
-            styles={styles.button}
-            color="red"
-            onPress={() => setIsVisible(true)}
-          >
-            <Text>Login</Text>
+          <Button styles={styles.button} onPress={() => setIsVisible(true)}>
+            <Text style={styles.loginText}>Login</Text>
           </Button>
-          <Text style={{ marginTop: 10 }}> register at www.windu.io</Text>
+          <Text style={{ marginTop: 10 }}>Register at www.windu.io</Text>
         </View>
       </View>
       <BottomSheet
         isVisible={isVisible}
         containerStyle={{ backgroundColor: "rgba(0.5, 0.25, 0, 0.2)" }}
       >
-        <Login onsubmit={handleSubmit} />
+        <Login onsubmit={handleSubmit} loading={loadingLogin} />
       </BottomSheet>
     </>
   );

@@ -1,38 +1,48 @@
-import React, { useState } from "react";
-import { View, Image, Text, FlatList, Dimensions } from "react-native";
+import React from "react";
+import { View, Image, Text, FlatList } from "react-native";
+import { useQuery } from "@apollo/client";
+import { GET_RECENT_ACTIVITY } from "../../../graphql/queries/activity/getRecentActivity";
 import Button from "../../../components/Button";
 import { useRecoilState } from "recoil";
 import {
   showActivityFormState,
   activeActivityState,
 } from "../../../recoil/atoms/activity";
+import styles from "./styles";
 
 const recentActivity = [
   {
+    key: 1,
     total_time: "00:20:10",
     project: "project ",
   },
   {
+    key: 2,
     total_time: "00:20:10",
     project: "project ",
   },
   {
+    key: 3,
     total_time: "00:20:10",
     project: "project ",
   },
   {
+    key: 4,
     total_time: "00:20:10",
     project: "project ",
   },
   {
+    key: 5,
     total_time: "00:20:10",
     project: "project ",
   },
   {
+    key: 6,
     total_time: "00:20:10",
     project: "project ",
   },
   {
+    key: 7,
     total_time: "00:20:10",
     project: "project ",
   },
@@ -42,8 +52,12 @@ const Timer = () => {
   const [show, setShow] = useRecoilState(showActivityFormState);
   const [active, setActive] = useRecoilState(activeActivityState);
 
+  const { loading, data } = useQuery(GET_RECENT_ACTIVITY);
+  console.log(data);
+
   const renderItem = ({ item }) => (
     <View
+      key={item.key}
       style={{
         flexDirection: "row",
         backgroundColor: "white",
@@ -57,8 +71,7 @@ const Timer = () => {
         <Image
           style={{ height: 20, width: 20, marginRight: 5 }}
           source={{
-            uri:
-              "https://windu.s3.us-east-2.amazonaws.com/assets/mobile/clock_gray.png",
+            uri: "https://windu.s3.us-east-2.amazonaws.com/assets/mobile/clock_gray.png",
           }}
           resizeMode="contain"
         />
@@ -72,48 +85,28 @@ const Timer = () => {
     <View>
       <View
         style={{
+          ...styles.timerContainer,
           backgroundColor: active ? "#4E35C2" : "#62C376",
-          height: "50%",
-          alignItems: "center",
-          justifyContent: "center",
         }}
       >
         <Text
           style={{
+            ...styles.timerText,
             color: active ? "white" : "black",
-            fontSize: 40,
-            fontWeight: "bold",
           }}
         >
           00:00:00
         </Text>
-        {active && <Text style={{ marginTop: 20, color: "white" }}>Title</Text>}
+        {active && <Text style={styles.activityTitle}>Title</Text>}
       </View>
 
       <View style={{ alignItems: "center", justifyContent: "center" }}>
         {!active && (
-          <Button
-            onPress={() => setShow(true)}
-            styles={{
-              backgroundColor: "#62C376",
-              height: 100,
-              width: 100,
-              alignItems: "center",
-              justifyContent: "center",
-              borderTopLeftRadius: 100,
-              borderTopRightRadius: 100,
-              borderBottomLeftRadius: 100,
-              borderBottomRightRadius: 100,
-              borderWidth: 10,
-              borderColor: "#F0F2F5",
-              marginTop: -50,
-            }}
-          >
+          <Button onPress={() => setShow(true)} styles={styles.playBtn}>
             <Image
               style={{ height: 20, width: 20 }}
               source={{
-                uri:
-                  "https://windu.s3.us-east-2.amazonaws.com/assets/mobile/play_white.png",
+                uri: "https://windu.s3.us-east-2.amazonaws.com/assets/mobile/play_white.png",
               }}
               resizeMode="contain"
             />
@@ -147,8 +140,7 @@ const Timer = () => {
               <Image
                 style={{ height: 20, width: 20 }}
                 source={{
-                  uri:
-                    "https://windu.s3.us-east-2.amazonaws.com/assets/mobile/pause_white.png",
+                  uri: "https://windu.s3.us-east-2.amazonaws.com/assets/mobile/pause_white.png",
                 }}
                 resizeMode="contain"
               />
@@ -173,8 +165,7 @@ const Timer = () => {
               <Image
                 style={{ height: 20, width: 20 }}
                 source={{
-                  uri:
-                    "https://windu.s3.us-east-2.amazonaws.com/assets/mobile/stop_white.png",
+                  uri: "https://windu.s3.us-east-2.amazonaws.com/assets/mobile/stop_white.png",
                 }}
                 resizeMode="contain"
               />
@@ -195,12 +186,12 @@ const Timer = () => {
         <View style={{ width: "80%" }}>
           <Text style={{ color: "#989898" }}>Recent Activity</Text>
         </View>
-        <FlatList
+        {/*     <FlatList
           style={{ width: "80%" }}
           data={recentActivity}
           renderItem={renderItem}
           keyExtractor={(item) => item.id}
-        />
+        /> */}
       </View>
     </View>
   );

@@ -5,10 +5,8 @@ import { NavigationContainer } from "@react-navigation/native";
 import { createStackNavigator } from "@react-navigation/stack";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { SafeAreaProvider } from "react-native-safe-area-context";
-import { useLazyQuery } from "@apollo/client";
 import { useRecoilState } from "recoil";
 import { userState } from "./src/recoil/atoms/user";
-
 import OnBoard from "./src/screens/Onboard";
 import ActivityActions from "./src/screens/ActivityActions";
 import Messages from "./src/screens/Messages";
@@ -17,7 +15,7 @@ import ActiveTimers from "./src/screens/ActiveTimers";
 import ActivityAction from "./src/components/ActivityAction";
 import { navigationRef } from "./src/common/rootNavigation";
 import User from "./src/screens/User";
-import { GET_USER } from "./src/graphql/queries/user/getUser";
+import { readData } from "./src/store/utils";
 
 const styles = StyleSheet.create({
   tabBar: {
@@ -51,31 +49,21 @@ const TabIcon = ({ isActive, src, node }) => {
   );
 };
 
-const App = ({}) => {
+const App = () => {
   const [newUser, setNewUser] = React.useState(false);
   const [user, setUser] = useRecoilState(userState);
   const [navState, setNavState] = React.useState({});
   const Stack = createStackNavigator();
   const Tab = createBottomTabNavigator();
 
-  const [getUser, { loading }] = useLazyQuery(GET_USER, {
-    fetchPolicy: "cache-and-network",
-    onCompleted: ({ getUser }) => {
-      setUser(getUser);
-    },
-    onError: (err) => {
-      console.log(err);
-      setUser(false);
-    },
-  });
-
   useEffect(() => {
-    if (user) {
-      getUser();
-    }
-  }, [user]);
+    (async () => {
+      const user = await readData("@user");
+      setUser(JSON.parse(user));
+    })();
+  }, []);
 
-  if (loading) return <ActivityIndicator size="large" color="#F5A623" />;
+  //if (loading) return <ActivityIndicator size="large" color="#F5A623" />;
 
   if (newUser)
     return (
@@ -104,7 +92,7 @@ const App = ({}) => {
           >
             <Tab.Screen
               options={{
-                tabBarIcon: ({ focused, color, size }) => {
+                tabBarIcon: ({ focused }) => {
                   const isActive = focused;
                   return (
                     <TabIcon
@@ -120,7 +108,7 @@ const App = ({}) => {
             <Tab.Screen
               options={{
                 tabBarLabel: "Timers",
-                tabBarIcon: ({ focused, color, size }) => {
+                tabBarIcon: ({ focused }) => {
                   const isActive = focused;
                   return (
                     <TabIcon
@@ -133,11 +121,10 @@ const App = ({}) => {
               name="Timers"
               component={ActiveTimers}
             />
-
             <Tab.Screen
               options={{
                 tabBarLabel: "Messages",
-                tabBarIcon: ({ focused, color, size }) => {
+                tabBarIcon: ({ focused }) => {
                   const isActive = focused;
                   return (
                     <TabIcon
@@ -153,7 +140,7 @@ const App = ({}) => {
             <Tab.Screen
               options={{
                 tabBarLabel: "User",
-                tabBarIcon: ({ focused, color, size }) => {
+                tabBarIcon: ({ focused }) => {
                   const isActive = focused;
                   return (
                     <TabIcon
@@ -170,23 +157,23 @@ const App = ({}) => {
         </NavigationContainer>
       </SafeAreaProvider>
     );
-  } else {
-    return (
-      <SafeAreaProvider>
-        <NavigationContainer>
-          <Stack.Navigator headerMode="none">
-            <Stack.Screen
-              name="OnBoard"
-              component={OnBoard}
-              options={{
-                title: "OnBoard",
-              }}
-            />
-          </Stack.Navigator>
-        </NavigationContainer>
-      </SafeAreaProvider>
-    );
   }
+
+  return (
+    <SafeAreaProvider>
+      <NavigationContainer>
+        <Stack.Navigator headerMode="none">
+          <Stack.Screen
+            name="OnBoard"
+            component={OnBoard}
+            options={{
+              title: "OnBoard",
+            }}
+          />
+        </Stack.Navigator>
+      </NavigationContainer>
+    </SafeAreaProvider>
+  );
 };
 
 export default App;
