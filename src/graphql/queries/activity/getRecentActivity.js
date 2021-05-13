@@ -1,7 +1,7 @@
 import gql from "graphql-tag";
 
 export const GET_RECENT_ACTIVITY = gql`
-  query {
+  query getRecentActivity {
     getRecentActivity {
       month {
         _id

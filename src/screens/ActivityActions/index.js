@@ -1,16 +1,15 @@
 import React from "react";
-import { StyleSheet, Text, View, Image } from "react-native";
+import { StyleSheet } from "react-native";
 import { createMaterialTopTabNavigator } from "@react-navigation/material-top-tabs";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import Timer from "./Timer";
 import ContinueActivity from "./ContinueActivity";
 import PlannerActivity from "./PlannerActivity";
-import { navigationRef } from "../../common/rootNavigation";
 
 const Tab = createMaterialTopTabNavigator();
 
-const ActivityActions = ({ navigation, route }) => {
+const ActivityActions = () => {
   const insets = useSafeAreaInsets();
 
   const styles = StyleSheet.create({
@@ -34,7 +33,6 @@ const ActivityActions = ({ navigation, route }) => {
       }}
       style={styles.container}
       initialRouteName="Timer"
-      //ref={navigationRef}
     >
       <Tab.Screen name="Timer" component={Timer} />
       <Tab.Screen name="Continue" component={ContinueActivity} />

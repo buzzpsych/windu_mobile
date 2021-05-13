@@ -1,4 +1,10 @@
-import { ApolloClient, InMemoryCache, split, ApolloLink } from "@apollo/client";
+import {
+  ApolloClient,
+  InMemoryCache,
+  split,
+  ApolloLink,
+  from,
+} from "@apollo/client";
 import { setContext } from "@apollo/client/link/context";
 import { WebSocketLink } from "@apollo/client/link/ws";
 import { getMainDefinition } from "@apollo/client/utilities";
@@ -9,7 +15,7 @@ import { createUploadLink } from "apollo-upload-client"; // Allows FileList, Fil
 import { graphql, graphqlws } from "../../common/constants";
 import { readData, saveData } from "../../store/utils";
 
-const errorLink = onError(({ graphQLErrors, networkError, ...props }) => {
+const errorLink = onError(({ networkError, graphQLErrors }) => {
   if (networkError) {
     const error = JSON.stringify(networkError);
     const errorParsed = JSON.parse(error);
@@ -23,11 +29,12 @@ const errorLink = onError(({ graphQLErrors, networkError, ...props }) => {
 
 const refreshTokenLink = new ApolloLink(async (operation, forward) => {
   // if operation is login we move to next link
+
   if (
     operation.operationName === "login" ||
     operation.operationName === "googleLogin"
   )
-    return forward(operation);
+    return forward ? forward(operation) : null;
 
   const user = await readData("@user");
   const token = await readData("@token");
@@ -66,11 +73,11 @@ const refreshTokenLink = new ApolloLink(async (operation, forward) => {
 
       saveData("@token", JSON.stringify(authToken));
     } catch (error) {
-      alert(error);
+      alert("refresh token error:", error);
     }
   }
 
-  return forward(operation);
+  return forward ? forward(operation) : null;
 });
 
 const httpLink = createUploadLink({
@@ -89,10 +96,7 @@ const authLink = setContext(async (_, { headers }) => {
   };
 });
 
-const links = refreshTokenLink
-  .concat(authLink)
-  .concat(errorLink)
-  .concat(httpLink);
+const links = from([refreshTokenLink, authLink, errorLink, httpLink]);
 
 const wsLink = setContext(async (_, { headers }) => {
   new WebSocketLink({
