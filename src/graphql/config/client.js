@@ -6,6 +6,7 @@ import {
   from,
 } from "@apollo/client";
 import { setContext } from "@apollo/client/link/context";
+import { SubscriptionClient } from "subscriptions-transport-ws";
 import { WebSocketLink } from "@apollo/client/link/ws";
 import { getMainDefinition } from "@apollo/client/utilities";
 import { onError } from "apollo-link-error";
@@ -15,7 +16,7 @@ import { createUploadLink } from "apollo-upload-client"; // Allows FileList, Fil
 import { graphql, graphqlws } from "../../common/constants";
 import { readData, saveData } from "../../store/utils";
 
-const errorLink = onError(({ networkError, graphQLErrors }) => {
+const errorLink = onError(({ networkError }) => {
   if (networkError) {
     const error = JSON.stringify(networkError);
     const errorParsed = JSON.parse(error);
@@ -34,7 +35,7 @@ const refreshTokenLink = new ApolloLink(async (operation, forward) => {
     operation.operationName === "login" ||
     operation.operationName === "googleLogin"
   )
-    return forward ? forward(operation) : null;
+    return forward(operation);
 
   const user = await readData("@user");
   const token = await readData("@token");
@@ -77,7 +78,7 @@ const refreshTokenLink = new ApolloLink(async (operation, forward) => {
     }
   }
 
-  return forward ? forward(operation) : null;
+  return forward(operation);
 });
 
 const httpLink = createUploadLink({
@@ -98,17 +99,19 @@ const authLink = setContext(async (_, { headers }) => {
 
 const links = from([refreshTokenLink, authLink, errorLink, httpLink]);
 
-const wsLink = setContext(async (_, { headers }) => {
-  new WebSocketLink({
-    uri: graphqlws,
-    options: {
-      reconnect: true,
-      connectionParams: {
-        Authorization: `Bearer ${await readData("@token")}`,
-      },
-    },
-  });
+const wsClient = new SubscriptionClient(graphqlws, {
+  lazy: true,
+  reconnect: true,
+  connectionParams: async () => {
+    const token = await readData("@token");
+    const tokenParse = JSON.parse(token);
+    return {
+      Authorization: `Bearer ${get(tokenParse, "key", "")}`,
+    };
+  },
 });
+
+const wsLink = new WebSocketLink(wsClient);
 
 const splitLink = split(
   ({ query }) => {

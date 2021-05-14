@@ -1,12 +1,19 @@
 import React from "react";
 import { View, Image, FlatList, ActivityIndicator } from "react-native";
 import { ListItem, Avatar, Text } from "react-native-elements";
-import { useQuery, useSubscription, useLazyQuery } from "@apollo/client";
+import {
+  useQuery,
+  useSubscription,
+  useLazyQuery,
+  useMutation,
+} from "@apollo/client";
 import { head, has } from "lodash";
+import moment from "moment";
 import { GET_RECENT_ACTIVITY } from "../../../graphql/queries/activity/getRecentActivity";
 import { GET_CURRENT_ACTIVITY } from "../../../graphql/queries/activity/getCurrentActivity";
 import { START_ACTIVITY } from "../../../graphql/subscriptions/startActivity";
 import { STOP_ACTIVITY as STOP_ACTIVITY_SUB } from "../../../graphql/subscriptions/stopActivity";
+import { STOP_ACTIVITY } from "../../../graphql/mutations/activity/stopActivity";
 import Button from "../../../components/Button";
 import { useRecoilState, useRecoilValue } from "recoil";
 import {
@@ -31,9 +38,6 @@ const Timer = () => {
 
   const [getCurrentActivity, { loading }] = useLazyQuery(GET_CURRENT_ACTIVITY, {
     fetchPolicy: "cache-and-network",
-    onError: (error) => {
-      //console.log("join here ", error);
-    },
     onCompleted: ({ getCurrentActivity }) => {
       if (has(getCurrentActivity, "time.start"))
         setActivity({
@@ -43,18 +47,21 @@ const Timer = () => {
     },
   });
 
-  const {
-    data: startActivityData,
-    error: startActivityError,
-    loading: starting,
-  } = useSubscription(START_ACTIVITY);
+  const [stopActivity, { loading: stopping }] = useMutation(STOP_ACTIVITY, {
+    onCompleted: ({ stopActivity }) => {
+      console.log("stop completed ", stopActivity);
+    },
+    onError: (error) => alert(error),
+  });
+
+  const { data: startActivityData, error: startActivityError } =
+    useSubscription(START_ACTIVITY);
 
   const { data: stopActivityData, error: stopActivityError } =
     useSubscription(STOP_ACTIVITY_SUB);
 
   React.useEffect(() => {
     if (startActivityError) console.log(startActivityError);
-    console.log("start activity subscription", startActivityData);
     if (startActivityData) {
       const { startActivity } = startActivityData;
       const { created_by } = startActivity;
@@ -63,19 +70,16 @@ const Timer = () => {
           active: true,
           data: startActivity,
         });
-      handleRefetchingViews();
     }
   }, [startActivityError, startActivityData]);
 
   React.useEffect(() => {
-    //if (stopActivityError) console.log(stopActivityError);
+    if (stopActivityError) console.log(stopActivityError);
     if (stopActivityData) {
       const { stopActivity } = stopActivityData;
       const { created_by } = stopActivity;
       if (created_by._id === user._id && activity.active)
         setActivity({ data: null, active: false });
-
-      handleRefetchingViews();
     }
   }, [stopActivityError, stopActivityData]);
 
@@ -100,6 +104,17 @@ const Timer = () => {
       resetHandler();
     }
   }, [active]);
+
+  const handleStop = () => {
+    stopActivity({
+      variables: {
+        input: {
+          activity_id: currentActivity._id,
+          date_end: moment.utc(),
+        },
+      },
+    });
+  };
 
   const renderItem = ({ item }) => {
     const avatarSrc =
@@ -188,7 +203,7 @@ const Timer = () => {
               />
             </Button>
             <Button
-              onPress={() => console.log("STOP")}
+              onPress={() => handleStop()}
               styles={{
                 backgroundColor: "#F31A2D",
                 height: 100,

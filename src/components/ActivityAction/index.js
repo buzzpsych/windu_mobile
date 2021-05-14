@@ -132,7 +132,7 @@ export const ActivityAction = ({ navState }) => {
         </View>
       )}
 
-      {active && (
+{/*       {active && (
         <ActiveActivityAction
           onpress={() =>
             RootNavigation.navigate("Activity", {
@@ -140,7 +140,7 @@ export const ActivityAction = ({ navState }) => {
             })
           }
         />
-      )}
+      )} */}
     </Modalize>
   );
 };
