@@ -6220,6 +6220,11 @@ react-native-elements@^3.3.2:
     react-native-ratings "^7.3.0"
     react-native-size-matters "^0.3.1"
 
+react-native-fast-toast@^2.3.0:
+  version "2.3.0"
+  resolved "https://registry.yarnpkg.com/react-native-fast-toast/-/react-native-fast-toast-2.3.0.tgz#676eeff766777ad61d20ba2316275b2ac21ab145"
+  integrity sha512-RsQd44vLDgXiegKg/8/yISARAcIBm55mrLtMiE/X2LN2lk6UzgsjNZkLNfW3rm/ot/OMnh9y4du5WcpBsnyUSw==
+
 react-native-gesture-handler@^1.10.3:
   version "1.10.3"
   resolved "https://registry.yarnpkg.com/react-native-gesture-handler/-/react-native-gesture-handler-1.10.3.tgz#942bbf2963bbf49fa79593600ee9d7b5dab3cfc0"

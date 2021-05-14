@@ -63,8 +63,6 @@ const App = () => {
     })();
   }, []);
 
-  //if (loading) return <ActivityIndicator size="large" color="#F5A623" />;
-
   if (newUser)
     return (
       <SafeAreaProvider>

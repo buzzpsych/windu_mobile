@@ -23,12 +23,12 @@ export const ActivityAction = ({ navState }) => {
   const [activity] = useRecoilState(activeActivityState);
   const [hide, setHide] = useState(false);
 
-  const [createActivity, { loading: creating }] = useMutation(CREATE_ACTIVITY, {
+  const [createActivity] = useMutation(CREATE_ACTIVITY, {
     onCompleted: ({ createActivity }) => {
-      console.log("on completed ", createActivity);
+      toast.show(`${createActivity.title} started`, { type: "success" });
       setShow(false);
     },
-    onError: (error) => alert(error),
+    onError: (error) => toast.show(error, { type: "error" }),
   });
 
   const { active } = activity;
@@ -131,16 +131,15 @@ export const ActivityAction = ({ navState }) => {
           </View>
         </View>
       )}
-
-{/*       {active && (
+      {active && (
         <ActiveActivityAction
-          onpress={() =>
+          onpress={() => {
             RootNavigation.navigate("Activity", {
               screen: "Timer",
-            })
-          }
+            });
+          }}
         />
-      )} */}
+      )}
     </Modalize>
   );
 };

@@ -14,8 +14,10 @@ import { GET_CURRENT_ACTIVITY } from "../../../graphql/queries/activity/getCurre
 import { START_ACTIVITY } from "../../../graphql/subscriptions/startActivity";
 import { STOP_ACTIVITY as STOP_ACTIVITY_SUB } from "../../../graphql/subscriptions/stopActivity";
 import { STOP_ACTIVITY } from "../../../graphql/mutations/activity/stopActivity";
+import { PAUSE_ACTIVITY } from "../../../graphql/mutations/activity/pauseActivity";
 import Button from "../../../components/Button";
 import { useRecoilState, useRecoilValue } from "recoil";
+import { playImg, pauseImg, stopImg } from "../../../common/constants";
 import {
   showActivityFormState,
   activeActivityState,
@@ -30,10 +32,10 @@ const Timer = () => {
   const [activity, setActivity] = useRecoilState(activeActivityState);
   const { active, data: currentActivity } = activity;
 
-  const { startHandler, resetHandler, time, setTime } = useTimer();
+  const { startHandler, resetHandler, time } = useTimer();
 
   const { loading: loadingRecent, data } = useQuery(GET_RECENT_ACTIVITY, {
-    onError: (error) => alert(error),
+    onError: (error) => toast.show(error, { type: "error" }),
   });
 
   const [getCurrentActivity, { loading }] = useLazyQuery(GET_CURRENT_ACTIVITY, {
@@ -49,9 +51,16 @@ const Timer = () => {
 
   const [stopActivity, { loading: stopping }] = useMutation(STOP_ACTIVITY, {
     onCompleted: ({ stopActivity }) => {
-      console.log("stop completed ", stopActivity);
+      toast.show(`${stopActivity.title} stopped`, { type: "success" });
     },
-    onError: (error) => alert(error),
+    onError: (error) => toast.show(error, { type: "error" }),
+  });
+
+  const [pauseActivity, { loading: pausing }] = useMutation(PAUSE_ACTIVITY, {
+    onCompleted: ({ pauseActivity }) => {
+      toast.show(`${pauseActivity.title} paused`, { type: "success" });
+    },
+    onError: (error) => toast.show(error, { type: "error" }),
   });
 
   const { data: startActivityData, error: startActivityError } =
@@ -97,7 +106,6 @@ const Timer = () => {
         startHandler(start);
       } else {
         const start = activity?.data?.time?.start;
-        console.log(start);
         startHandler(start);
       }
     } else {
@@ -113,6 +121,12 @@ const Timer = () => {
           date_end: moment.utc(),
         },
       },
+    });
+  };
+
+  const handlePause = () => {
+    pauseActivity({
+      variables: { id: currentActivity._id, time: moment.utc() },
     });
   };
 
@@ -142,28 +156,33 @@ const Timer = () => {
           backgroundColor: active ? "#4E35C2" : "#62C376",
         }}
       >
-        <Text
-          style={{
-            ...styles.timerText,
-            color: active ? "white" : "black",
-          }}
-        >
-          {time}
-        </Text>
-        {active && (
-          <Text h4 style={styles.activityTitle}>
-            {currentActivity.title}
-          </Text>
+        {loading || stopping || pausing ? (
+          <ActivityIndicator size="large" color="white" />
+        ) : (
+          <>
+            <Text
+              style={{
+                ...styles.timerText,
+                color: active ? "white" : "black",
+              }}
+            >
+              {time}
+            </Text>
+            {active && (
+              <Text h4 style={styles.activityTitle}>
+                {currentActivity.title}
+              </Text>
+            )}
+          </>
         )}
       </View>
-
       <View style={{ alignItems: "center", justifyContent: "center" }}>
         {!active && (
           <Button onPress={() => setShow(true)} styles={styles.playBtn}>
             <Image
-              style={{ height: 20, width: 20 }}
+              style={styles.actionImg}
               source={{
-                uri: "https://windu.s3.us-east-2.amazonaws.com/assets/mobile/play_white.png",
+                uri: playImg,
               }}
               resizeMode="contain"
             />
@@ -177,52 +196,20 @@ const Timer = () => {
               justifyContent: "space-evenly",
             }}
           >
-            <Button
-              onPress={() => console.log("PAUSE")}
-              styles={{
-                backgroundColor: "#F5A623",
-                height: 100,
-                width: 100,
-                alignItems: "center",
-                justifyContent: "center",
-                borderTopLeftRadius: 100,
-                borderTopRightRadius: 100,
-                borderBottomLeftRadius: 100,
-                borderBottomRightRadius: 100,
-                borderWidth: 10,
-                borderColor: "#F0F2F5",
-                marginTop: -50,
-              }}
-            >
+            <Button onPress={() => handlePause()} styles={styles.pauseBtn}>
               <Image
-                style={{ height: 20, width: 20 }}
+                style={styles.actionImg}
                 source={{
-                  uri: "https://windu.s3.us-east-2.amazonaws.com/assets/mobile/pause_white.png",
+                  uri: pauseImg,
                 }}
                 resizeMode="contain"
               />
             </Button>
-            <Button
-              onPress={() => handleStop()}
-              styles={{
-                backgroundColor: "#F31A2D",
-                height: 100,
-                width: 100,
-                alignItems: "center",
-                justifyContent: "center",
-                borderTopLeftRadius: 100,
-                borderTopRightRadius: 100,
-                borderBottomLeftRadius: 100,
-                borderBottomRightRadius: 100,
-                borderWidth: 10,
-                borderColor: "#F0F2F5",
-                marginTop: -50,
-              }}
-            >
+            <Button onPress={() => handleStop()} styles={styles.stopBtn}>
               <Image
-                style={{ height: 20, width: 20 }}
+                style={styles.actionImg}
                 source={{
-                  uri: "https://windu.s3.us-east-2.amazonaws.com/assets/mobile/stop_white.png",
+                  uri: stopImg,
                 }}
                 resizeMode="contain"
               />
@@ -230,22 +217,14 @@ const Timer = () => {
           </View>
         )}
       </View>
-      <View
-        style={{
-          width: "100%",
-          alignItems: "center",
-          height: "40%",
-          paddingVertical: 20,
-          paddingHorizontal: 20,
-        }}
-      >
+      <View style={styles.recentContainer}>
         <View style={{ width: "100%", marginBottom: 20 }}>
           <Text h4 style={{ color: "#989898" }}>
             Recent Activity
           </Text>
         </View>
         {loadingRecent ? (
-          <ActivityIndicator />
+          <ActivityIndicator size="large" color="#F5A623" />
         ) : (
           <FlatList
             style={{ width: "100%" }}
