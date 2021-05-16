@@ -1,41 +1,44 @@
 import React from "react";
-import { Card, Input, Button } from "react-native-elements";
-import { Formik } from "formik";
+import { View } from "react-native";
+import { Text, Button } from "react-native-elements";
+import { Formik, Field } from "formik";
+import TextInput from "../formikFields/TextInput";
 import * as Yup from "yup";
 import styles from "./styles";
 
 const validationSchema = Yup.object().shape({
-  email: Yup.string().required("Required"),
-  password: Yup.string().required("Required"),
+  email: Yup.string()
+    .trim()
+    .required("This field is required")
+    .email("This is not a valid email"),
+  password: Yup.string().required("This field is required"),
 });
 
 const Login = ({ onsubmit, loading }) => {
   return (
     <Formik
       initialValues={{
-        email: "windu.testing@gmail.com",
-        password: "Vic21121105*",
+        email: "",
+        password: "",
       }}
       onSubmit={onsubmit}
       validationSchema={validationSchema}
     >
-      {({ handleChange, handleSubmit, errors }) => (
-        <Card styles={styles.card}>
-          <Input
+      {({ handleSubmit }) => (
+        <View style={styles.container}>
+          <Text h4 style={{ alignSelf: "center", marginVertical: 20 }}>
+            Login
+          </Text>
+          <Field
+            component={TextInput}
+            placeholder="Enter your email"
             name="email"
-            containerStyle={{}}
-            disabledInputStyle={{ background: "#D8DDE6" }}
-            errorMessage={errors.email}
-            placeholder="Email"
-            onChangeText={handleChange("email")}
           />
-          <Input
+          <Field
+            component={TextInput}
+            placeholder="Enter your password"
             name="password"
             secureTextEntry={true}
-            disabledInputStyle={{ background: "#D8DDE6" }}
-            errorMessage={errors.password}
-            placeholder="password"
-            onChangeText={handleChange("password")}
           />
           <Button
             buttonStyle={styles.button}
@@ -43,7 +46,7 @@ const Login = ({ onsubmit, loading }) => {
             loading={loading}
             title="Login"
           />
-        </Card>
+        </View>
       )}
     </Formik>
   );

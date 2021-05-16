@@ -1,16 +1,19 @@
 import { StyleSheet } from "react-native";
 
 export default styles = StyleSheet.create({
-  card: { flex: 1, justifyContent: "center", alignItems: "center" },
-  button: {
-    marginTop: 10,
-    width: "100%",
+  container: {
+    paddingHorizontal: 40,
+    paddingVertical: 40,
+    flex: 1,
     justifyContent: "center",
-    alignItems: "center",
+    margin: "auto",
+  },
+  button: {
+    marginTop: 20,
+    width: "50%",
+    alignSelf: "center",
+    justifyContent: "center",
     backgroundColor: "#F5A623",
-    width: "80%",
-    marginLeft: "auto",
-    marginRight: "auto",
-    height: 40,
+    color: "white",
   },
 });

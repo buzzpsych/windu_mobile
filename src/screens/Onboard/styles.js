@@ -3,7 +3,7 @@ import { StyleSheet } from "react-native";
 export default styles = StyleSheet.create({
   mainContainer: {
     flex: 1,
-    backgroundColor: "#fff",
+    backgroundColor: "#f0f2f5",
   },
   subContainer: {
     alignItems: "center",
@@ -13,19 +13,15 @@ export default styles = StyleSheet.create({
   },
   container: {
     flex: 1,
-    backgroundColor: "#fff",
-    alignItems: "center",
+    backgroundColor: "#f0f2f5",
     justifyContent: "center",
   },
   button: {
-    marginTop: 10,
-    width: "100%",
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#F5A623",
+    marginTop: 20,
     width: "50%",
-    margin: "auto",
-    height: 40,
+    alignSelf: 'center',
+    justifyContent: "center",
+    backgroundColor: "#F5A623",
     color: "white",
   },
   imgContainer: {
@@ -43,8 +39,8 @@ export default styles = StyleSheet.create({
     width: "100%",
   },
   logo: {
-    height: 50,
-    width: 50,
+    height: 150,
+    width: 150,
   },
   loginText: {
     color: "white",
