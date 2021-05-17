@@ -1,6 +1,6 @@
 import React from "react";
-import { View, Image, Text } from "react-native";
-import { Button } from "react-native-elements";
+import { View, Image, Dimensions } from "react-native";
+import { Button, Text } from "react-native-elements";
 import { useMutation } from "@apollo/client";
 import { GoogleSocialButton } from "react-native-social-buttons";
 import { Modalize } from "react-native-modalize";
@@ -17,6 +17,7 @@ import styles from "./styles";
 
 const OnBoard = () => {
   const [_, setUser] = useRecoilState(userState);
+  const windowHeight = Dimensions.get("window").height;
   const modalizeRef = React.useRef();
 
   const onOpen = () => modalizeRef.current?.open();
@@ -96,7 +97,7 @@ const OnBoard = () => {
   return (
     <>
       <View style={styles.mainContainer}>
-        <View style={styles.subContainer}>
+        <View style={styles.logoContainer}>
           <Image
             style={styles.logo}
             source={{
@@ -105,7 +106,7 @@ const OnBoard = () => {
             resizeMode="contain"
           />
         </View>
-        <View style={styles.imgContainer}>
+        <View style={{ flex: 3 }}>
           <Image
             style={styles.img}
             source={{
@@ -114,7 +115,7 @@ const OnBoard = () => {
             resizeMode="contain"
           />
         </View>
-        <View style={styles.container}>
+        <View style={styles.buttonsContainer}>
           <GoogleSocialButton
             onPress={() => Glogin()}
             buttonViewStyle={{ alignSelf: "center", width: "50%" }}
@@ -125,7 +126,11 @@ const OnBoard = () => {
           </Text>
         </View>
       </View>
-      <Modalize ref={modalizeRef} withHandle={true} modalTopOffset={500}>
+      <Modalize
+        ref={modalizeRef}
+        withHandle={true}
+        modalTopOffset={windowHeight - 400}
+      >
         <Login onsubmit={handleSubmit} loading={loadingLogin} />
       </Modalize>
     </>

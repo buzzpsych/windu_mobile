@@ -149,7 +149,7 @@ const Timer = () => {
   };
 
   return (
-    <View>
+    <View style={{ flex: 1 }}>
       <View
         style={{
           ...styles.timerContainer,

@@ -2,7 +2,7 @@ import { StyleSheet } from "react-native";
 
 export default styles = StyleSheet.create({
   timerContainer: {
-    height: "50%",
+    flex: 1,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -58,10 +58,8 @@ export default styles = StyleSheet.create({
     width: 20,
   },
   recentContainer: {
-    width: "100%",
-    alignItems: "center",
-    height: "40%",
-    paddingVertical: 20,
+    flex: 1.5,
+    paddingBottom: 40,
     paddingHorizontal: 20,
   },
 });

@@ -27,7 +27,7 @@ const Login = ({ onsubmit, loading }) => {
       {({ handleSubmit }) => (
         <View style={styles.container}>
           <Text h4 style={{ alignSelf: "center", marginVertical: 20 }}>
-            Login
+            Proceed with your login
           </Text>
           <Field
             component={TextInput}
