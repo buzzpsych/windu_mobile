@@ -26,8 +26,10 @@ const OnBoard = () => {
   const [googleLogin] = useMutation(LOGIN_WITH_GOOGLE, {
     onError: (error) => alert(error),
     onCompleted: ({ googleLogin }) => {
-      const { token } = googleLogin;
+      const { token, user } = googleLogin;
       saveData("@token", token);
+      saveData("@user", JSON.stringify(user));
+      setUser(user);
     },
   });
 
