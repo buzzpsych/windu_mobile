@@ -1,12 +1,13 @@
 import React, { useEffect } from "react";
-import { StyleSheet, Image, Text, ActivityIndicator } from "react-native";
+import { StyleSheet, Image, Text, View, Dimensions } from "react-native";
 import "react-native-gesture-handler";
 import { NavigationContainer } from "@react-navigation/native";
 import { createStackNavigator } from "@react-navigation/stack";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { SafeAreaProvider } from "react-native-safe-area-context";
-import { useRecoilState } from "recoil";
+import { useRecoilState, useRecoilValue } from "recoil";
 import { userState } from "./src/recoil/atoms/user";
+import { activeActivityState } from "./src/recoil/atoms/activity";
 import OnBoard from "./src/screens/Onboard";
 import ActivityActions from "./src/screens/ActivityActions";
 import Messages from "./src/screens/Messages";
@@ -16,6 +17,7 @@ import ActivityAction from "./src/components/ActivityAction";
 import { navigationRef } from "./src/common/rootNavigation";
 import User from "./src/screens/User";
 import { readData } from "./src/store/utils";
+import { TimerProvider, useTimer } from "./src/contexts/timer-context";
 
 const styles = StyleSheet.create({
   tabBar: {
@@ -52,9 +54,10 @@ const TabIcon = ({ isActive, src, node }) => {
 const App = () => {
   const [newUser, setNewUser] = React.useState(false);
   const [user, setUser] = useRecoilState(userState);
-  const [navState, setNavState] = React.useState({});
+  const [_, setNavState] = React.useState({});
   const Stack = createStackNavigator();
   const Tab = createBottomTabNavigator();
+  const activity = useRecoilValue(activeActivityState);
 
   useEffect(() => {
     (async () => {
@@ -73,86 +76,93 @@ const App = () => {
   if (user) {
     return (
       <SafeAreaProvider>
-        <NavigationContainer
-          onStateChange={(state) => setNavState(state)}
-          ref={navigationRef}
-        >
-          <ActivityAction navState={navState} />
-          <Tab.Navigator
-            adaptive={true}
-            tabBarOptions={{
-              style: styles.tabBar,
-              activeTintColor: "#F5A623",
-              showLabel: false,
-            }}
-            initialRouteName="ActivityActions"
-            labeled={false}
+        <TimerProvider initialTime={"00:00:00"} throttling={1000}>
+          <NavigationContainer
+            onStateChange={(state) => setNavState(state)}
+            ref={navigationRef}
           >
-            <Tab.Screen
-              options={{
-                tabBarIcon: ({ focused }) => {
-                  const isActive = focused;
-                  return (
-                    <TabIcon
-                      isActive={isActive}
-                      src="https://windu.s3.us-east-2.amazonaws.com/assets/mobile/play_nav.png"
-                    />
-                  );
-                },
+            <ActivityAction />
+            <Tab.Navigator
+              adaptive={true}
+              tabBarOptions={{
+                style: styles.tabBar,
+                activeTintColor: "#F5A623",
+                showLabel: false,
               }}
-              name="ActivityActions"
-              component={ActivityActions}
-            />
-            <Tab.Screen
-              options={{
-                tabBarLabel: "Timers",
-                tabBarIcon: ({ focused }) => {
-                  const isActive = focused;
-                  return (
-                    <TabIcon
-                      isActive={isActive}
-                      src="https://windu.s3.us-east-2.amazonaws.com/assets/mobile/timers_nav.png"
-                    />
-                  );
-                },
-              }}
-              name="Timers"
-              component={ActiveTimers}
-            />
-            <Tab.Screen
-              options={{
-                tabBarLabel: "Messages",
-                tabBarIcon: ({ focused }) => {
-                  const isActive = focused;
-                  return (
-                    <TabIcon
-                      isActive={isActive}
-                      src="https://windu.s3.us-east-2.amazonaws.com/assets/mobile/messages_nav.png"
-                    />
-                  );
-                },
-              }}
-              name="Messages"
-              component={Messages}
-            />
-            <Tab.Screen
-              options={{
-                tabBarLabel: "User",
-                tabBarIcon: ({ focused }) => {
-                  const isActive = focused;
-                  return (
-                    <TabIcon
-                      isActive={isActive}
-                      src="https://windu.s3.us-east-2.amazonaws.com/assets/mobile/user_nav.png"
-                    />
-                  );
-                },
-              }}
-              name="User"
-              component={User}
-            />
-          </Tab.Navigator>
-        </NavigationContainer>
+              initialRouteName="ActivityActions"
+              labeled={false}
+            >
+              <Tab.Screen
+                options={{
+                  tabBarIcon: ({ focused }) => {
+                    const isActive = focused;
+                    const { active } = activity;
+                    const { time } = useTimer();
+
+                    if (active && !isActive)
+                      return <Text style={{ fontWeight: "bold" }}>{time}</Text>;
+                    return (
+                      <TabIcon
+                        isActive={isActive}
+                        src="https://windu.s3.us-east-2.amazonaws.com/assets/mobile/play_nav.png"
+                      />
+                    );
+                  },
+                }}
+                name="ActivityActions"
+                component={ActivityActions}
+              />
+              <Tab.Screen
+                options={{
+                  tabBarLabel: "Timers",
+                  tabBarIcon: ({ focused }) => {
+                    const isActive = focused;
+                    return (
+                      <TabIcon
+                        isActive={isActive}
+                        src="https://windu.s3.us-east-2.amazonaws.com/assets/mobile/timers_nav.png"
+                      />
+                    );
+                  },
+                }}
+                name="Timers"
+                component={ActiveTimers}
+              />
+              <Tab.Screen
+                options={{
+                  tabBarLabel: "Messages",
+                  tabBarIcon: ({ focused }) => {
+                    const isActive = focused;
+                    return (
+                      <TabIcon
+                        isActive={isActive}
+                        src="https://windu.s3.us-east-2.amazonaws.com/assets/mobile/messages_nav.png"
+                      />
+                    );
+                  },
+                }}
+                name="Messages"
+                component={Messages}
+              />
+              <Tab.Screen
+                options={{
+                  tabBarLabel: "User",
+                  tabBarIcon: ({ focused }) => {
+                    const isActive = focused;
+                    return (
+                      <TabIcon
+                        isActive={isActive}
+                        src="https://windu.s3.us-east-2.amazonaws.com/assets/mobile/user_nav.png"
+                      />
+                    );
+                  },
+                }}
+                name="User"
+                component={User}
+              />
+            </Tab.Navigator>
+          </NavigationContainer>
+        </TimerProvider>
       </SafeAreaProvider>
     );
   }

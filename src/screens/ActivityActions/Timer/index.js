@@ -18,21 +18,17 @@ import { PAUSE_ACTIVITY } from "../../../graphql/mutations/activity/pauseActivit
 import Button from "../../../components/Button";
 import { useRecoilState, useRecoilValue } from "recoil";
 import { playImg, pauseImg, stopImg } from "../../../common/constants";
-import {
-  showActivityFormState,
-  activeActivityState,
-} from "../../../recoil/atoms/activity";
+import { activeActivityState } from "../../../recoil/atoms/activity";
 import { userState } from "../../../recoil/atoms/user";
-import { useTimer } from "../../../common/useTimer";
+import { useTimer } from "../../../contexts/timer-context";
 import styles from "./styles";
 
 const Timer = () => {
-  const [_, setShow] = useRecoilState(showActivityFormState);
   const user = useRecoilValue(userState);
   const [activity, setActivity] = useRecoilState(activeActivityState);
   const { active, data: currentActivity } = activity;
 
-  const { startHandler, resetHandler, time } = useTimer();
+  const { startHandler, resetHandler, time, modalizeRef } = useTimer();
 
   const { loading: loadingRecent, data } = useQuery(GET_RECENT_ACTIVITY, {
     onError: (error) => toast.show(error, { type: "error" }),
@@ -130,6 +126,10 @@ const Timer = () => {
     });
   };
 
+  const onOpen = () => {
+    modalizeRef.current.open();
+  };
+
   const renderItem = ({ item }) => {
     const avatarSrc =
       item.created_by.avatar ||
@@ -178,7 +178,7 @@ const Timer = () => {
       </View>
       <View style={{ alignItems: "center", justifyContent: "center" }}>
         {!active && (
-          <Button onPress={() => setShow(true)} styles={styles.playBtn}>
+          <Button onPress={() => onOpen()} styles={styles.playBtn}>
             <Image
               style={styles.actionImg}
               source={{

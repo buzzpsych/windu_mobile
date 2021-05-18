@@ -1,8 +1,10 @@
 import React, { useState } from "react";
-import { ActivityIndicator, View } from "react-native";
-import { Input, Button as ButtonElements } from "react-native-elements";
+import { ActivityIndicator } from "react-native";
+import { Input, Button, Card } from "react-native-elements";
 import { useQuery } from "@apollo/client";
+import { Field } from "formik";
 import { map, uniqBy } from "lodash";
+import TextInput from "../formikFields/TextInput";
 import { GET_PROJECTS } from "../../graphql/queries/project/getProjects";
 import { styles } from "../../common/styles";
 import { Picker } from "@react-native-picker/picker";
@@ -17,12 +19,7 @@ const defaultProjectFilters = {
   relationship: "",
 };
 
-const Form = ({ onSubmit }) => {
-  const [fieldData, setFieldData] = useState({
-    title: "",
-    description: "",
-    project: "",
-  });
+const Form = ({ handleSubmit, setFieldValue, values, isSubmitting }) => {
   const [queryParameters, setQueryParameters] = useState({
     size: sizePerPage,
     offset: initialOffset,
@@ -41,45 +38,44 @@ const Form = ({ onSubmit }) => {
     },
   });
 
-  const handleSubmit = () => {
-    onSubmit(fieldData);
-  };
-  const handleChange = (field, value) => {
-    setFieldData({ ...fieldData, [field]: value });
-  };
   return (
-    <View
-      style={{
-        height: "100%",
-        justifyContent: "center",
-        flex: 1,
+    <Card
+      containerStyle={{
+        borderRadius: 8,
+        paddingVertical: 20,
+        paddingHorizontal: 20,
       }}
     >
-      <Input
+      <Field
         inputContainerStyle={{ borderBottomColor: "#F5A623" }}
-        label="Activity Title"
+        component={TextInput}
         placeholder="Title"
-        onChangeText={(v) => handleChange("title", v)}
+        label="Activity Title"
+        name="title"
       />
-      <Input
+      <Field
         inputContainerStyle={{ borderBottomColor: "#F5A623" }}
-        label="Activity Description"
+        component={TextInput}
         placeholder="Description"
-        onChangeText={(v) => handleChange("description", v)}
+        label="Activity Description"
+        name="description"
       />
-
       {loadingProjects ? (
-        <ActivityIndicator size="large" color="#F5A623" />
+        <ActivityIndicator
+          size="large"
+          color="#F5A623"
+          style={{ height: 50, marginBottom: 20 }}
+        />
       ) : (
         <Picker
-          selectedValue={fieldData.project}
+          selectedValue={values.project}
           style={{
             height: 50,
             width: 150,
-            marginBottom: 50,
+            marginBottom: 20,
             alignSelf: "center",
           }}
-          onValueChange={(itemValue) => handleChange("project", itemValue)}
+          onValueChange={(itemValue) => setFieldValue("project", itemValue)}
         >
           {map(projects, (project) => (
             <Picker.Item
@@ -90,13 +86,13 @@ const Form = ({ onSubmit }) => {
           ))}
         </Picker>
       )}
-
-      <ButtonElements
+      <Button
         buttonStyle={styles.button}
-        onPress={handleSubmit}
+        onPress={() => handleSubmit()}
         title="Start"
+        loading={isSubmitting}
       />
-    </View>
+    </Card>
   );
 };
 export default Form;
