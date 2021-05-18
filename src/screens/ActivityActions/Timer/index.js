@@ -1,5 +1,13 @@
 import React from "react";
-import { View, Image, FlatList, ActivityIndicator } from "react-native";
+import {
+  View,
+  Image,
+  FlatList,
+  ActivityIndicator,
+  RefreshControl,
+  ScrollView,
+  VirtualizedList,
+} from "react-native";
 import { ListItem, Avatar, Text } from "react-native-elements";
 import {
   useQuery,
@@ -39,16 +47,17 @@ const Timer = () => {
     onError: (error) => toast.show(error, { type: "error" }),
   });
 
-  const [getCurrentActivity, { loading }] = useLazyQuery(GET_CURRENT_ACTIVITY, {
-    fetchPolicy: "cache-and-network",
-    onCompleted: ({ getCurrentActivity }) => {
-      if (has(getCurrentActivity, "time.start"))
-        setActivity({
-          active: true,
-          data: getCurrentActivity,
-        });
-    },
-  });
+  const [getCurrentActivity, { loading, refetch: refetchCurrent }] =
+    useLazyQuery(GET_CURRENT_ACTIVITY, {
+      fetchPolicy: "cache-and-network",
+      onCompleted: ({ getCurrentActivity }) => {
+        if (has(getCurrentActivity, "time.start"))
+          setActivity({
+            active: true,
+            data: getCurrentActivity,
+          });
+      },
+    });
 
   const [stopActivity, { loading: stopping }] = useMutation(STOP_ACTIVITY, {
     onCompleted: ({ stopActivity }) => {
@@ -136,6 +145,11 @@ const Timer = () => {
     modalizeRef.current.open();
   };
 
+  const onRefresh = () => {
+    refetchCurrent();
+    refetchRecent();
+  };
+
   const renderItem = ({ item }) => {
     const avatarSrc =
       item.created_by.avatar ||
@@ -156,95 +170,105 @@ const Timer = () => {
 
   return (
     <View style={{ flex: 1 }}>
-      <View
-        style={{
-          ...styles.timerContainer,
-          backgroundColor: active ? "#4E35C2" : "#62C376",
-        }}
+      <ScrollView
+        contentContainerStyle={{ flex: 1, flexDirection: "column" }}
+        refreshControl={
+          <RefreshControl
+            onRefresh={onRefresh}
+            refreshing={loading || loadingRecent}
+          />
+        }
       >
-        {loading || stopping || pausing ? (
-          <ActivityIndicator size="large" color="white" />
-        ) : (
-          <View
-            style={{
-              justifyContent: "center",
-              alignItems: "center",
-            }}
-          >
-            <Text
+        <View
+          style={{
+            ...styles.timerContainer,
+            backgroundColor: active ? "#4E35C2" : "#62C376",
+          }}
+        >
+          {loading || stopping || pausing ? (
+            <ActivityIndicator size="large" color="white" />
+          ) : (
+            <View
               style={{
-                ...styles.timerText,
-                color: active ? "white" : "black",
+                justifyContent: "center",
+                alignItems: "center",
               }}
             >
-              {time}
-            </Text>
-            {active && (
-              <Text h4 style={styles.activityTitle}>
-                {currentActivity.title}
+              <Text
+                style={{
+                  ...styles.timerText,
+                  color: active ? "white" : "black",
+                }}
+              >
+                {time}
               </Text>
-            )}
-          </View>
-        )}
-      </View>
-      <View style={{ alignItems: "center", justifyContent: "center" }}>
-        {!active && (
-          <Button onPress={() => onOpen()} styles={styles.playBtn}>
-            <Image
-              style={styles.actionImg}
-              source={{
-                uri: playImg,
-              }}
-              resizeMode="contain"
-            />
-          </Button>
-        )}
-        {active && (
-          <View
-            style={{
-              width: "100%",
-              flexDirection: "row",
-              justifyContent: "space-evenly",
-            }}
-          >
-            <Button onPress={() => handlePause()} styles={styles.pauseBtn}>
-              <Image
-                style={styles.actionImg}
-                source={{
-                  uri: pauseImg,
-                }}
-                resizeMode="contain"
-              />
-            </Button>
-            <Button onPress={() => handleStop()} styles={styles.stopBtn}>
-              <Image
-                style={styles.actionImg}
-                source={{
-                  uri: stopImg,
-                }}
-                resizeMode="contain"
-              />
-            </Button>
-          </View>
-        )}
-      </View>
-      <View style={styles.recentContainer}>
-        <View style={{ width: "100%", marginBottom: 20 }}>
-          <Text h4 style={{ color: "#989898" }}>
-            Recent Activity
-          </Text>
+              {active && (
+                <Text h4 style={styles.activityTitle}>
+                  {currentActivity.title}
+                </Text>
+              )}
+            </View>
+          )}
         </View>
-        {loadingRecent ? (
-          <ActivityIndicator size="large" color="#F5A623" />
-        ) : (
-          <FlatList
-            style={{ width: "100%" }}
-            data={data?.getRecentActivity?.month}
-            renderItem={renderItem}
-            keyExtractor={(item) => item._id}
-          />
-        )}
-      </View>
+        <View style={{ alignItems: "center", justifyContent: "center" }}>
+          {!active && (
+            <Button onPress={() => onOpen()} styles={styles.playBtn}>
+              <Image
+                style={styles.actionImg}
+                source={{
+                  uri: playImg,
+                }}
+                resizeMode="contain"
+              />
+            </Button>
+          )}
+          {active && (
+            <View
+              style={{
+                width: "100%",
+                flexDirection: "row",
+                justifyContent: "space-evenly",
+              }}
+            >
+              <Button onPress={() => handlePause()} styles={styles.pauseBtn}>
+                <Image
+                  style={styles.actionImg}
+                  source={{
+                    uri: pauseImg,
+                  }}
+                  resizeMode="contain"
+                />
+              </Button>
+              <Button onPress={() => handleStop()} styles={styles.stopBtn}>
+                <Image
+                  style={styles.actionImg}
+                  source={{
+                    uri: stopImg,
+                  }}
+                  resizeMode="contain"
+                />
+              </Button>
+            </View>
+          )}
+        </View>
+        <View style={styles.recentContainer}>
+          <View style={{ width: "100%", marginBottom: 20 }}>
+            <Text h4 style={{ color: "#989898" }}>
+              Recent Activity
+            </Text>
+          </View>
+          {loadingRecent ? (
+            <ActivityIndicator size="large" color="#F5A623" />
+          ) : (
+            <FlatList
+              style={{ width: "100%" }}
+              data={data?.getRecentActivity?.month}
+              renderItem={renderItem}
+              keyExtractor={(item) => item._id}
+            />
+          )}
+        </View>
+      </ScrollView>
     </View>
   );
 };
