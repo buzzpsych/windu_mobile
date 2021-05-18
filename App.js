@@ -1,23 +1,23 @@
 import React, { useEffect } from "react";
-import { StyleSheet, Image, Text, View, Dimensions } from "react-native";
+import { StyleSheet, Image, Text } from "react-native";
 import "react-native-gesture-handler";
 import { NavigationContainer } from "@react-navigation/native";
 import { createStackNavigator } from "@react-navigation/stack";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { SafeAreaProvider } from "react-native-safe-area-context";
-import { useRecoilState, useRecoilValue } from "recoil";
+import { useRecoilState } from "recoil";
 import { userState } from "./src/recoil/atoms/user";
-import { activeActivityState } from "./src/recoil/atoms/activity";
 import OnBoard from "./src/screens/Onboard";
 import ActivityActions from "./src/screens/ActivityActions";
 import Messages from "./src/screens/Messages";
 import HomeOnboard from "./src/components/HomeOnboard";
 import ActiveTimers from "./src/screens/ActiveTimers";
 import ActivityAction from "./src/components/ActivityAction";
+import CurrentTimer from "./src/components/CurrentTimer";
 import { navigationRef } from "./src/common/rootNavigation";
 import User from "./src/screens/User";
 import { readData } from "./src/store/utils";
-import { TimerProvider, useTimer } from "./src/contexts/timer-context";
+import { TimerProvider } from "./src/contexts/timer-context";
 
 const styles = StyleSheet.create({
   tabBar: {
@@ -54,10 +54,9 @@ const TabIcon = ({ isActive, src, node }) => {
 const App = () => {
   const [newUser, setNewUser] = React.useState(false);
   const [user, setUser] = useRecoilState(userState);
-  const [_, setNavState] = React.useState({});
+  const [navState, setNavState] = React.useState(null);
   const Stack = createStackNavigator();
   const Tab = createBottomTabNavigator();
-  const activity = useRecoilValue(activeActivityState);
 
   useEffect(() => {
     (async () => {
@@ -77,11 +76,17 @@ const App = () => {
     return (
       <SafeAreaProvider>
         <TimerProvider initialTime={"00:00:00"} throttling={1000}>
+          <ActivityAction />
+          <CurrentTimer currentRoute={navState} />
           <NavigationContainer
-            onStateChange={(state) => setNavState(state)}
+            onStateChange={() => {
+              setNavState(navigationRef.current.getCurrentRoute().name);
+            }}
             ref={navigationRef}
+            onReady={() =>
+              setNavState(navigationRef.current.getCurrentRoute().name)
+            }
           >
-            <ActivityAction />
             <Tab.Navigator
               adaptive={true}
               tabBarOptions={{
@@ -96,11 +101,7 @@ const App = () => {
                 options={{
                   tabBarIcon: ({ focused }) => {
                     const isActive = focused;
-                    const { active } = activity;
-                    const { time } = useTimer();
 
-                    if (active && !isActive)
-                      return <Text style={{ fontWeight: "bold" }}>{time}</Text>;
                     return (
                       <TabIcon
                         isActive={isActive}
