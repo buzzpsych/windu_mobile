@@ -21,6 +21,7 @@ import { playImg, pauseImg, stopImg } from "../../../common/constants";
 import { activeActivityState } from "../../../recoil/atoms/activity";
 import { userState } from "../../../recoil/atoms/user";
 import { useTimer } from "../../../contexts/timer-context";
+import { updateRecentActivities } from "../../../common/cacheUtilities";
 import styles from "./styles";
 
 const Timer = () => {
@@ -50,6 +51,9 @@ const Timer = () => {
       toast.show(`${stopActivity.title} stopped`, { type: "success" });
     },
     onError: (error) => toast.show(error, { type: "error" }),
+    update: (cache, { data: { stopActivity } }) => {
+      updateRecentActivities(cache, stopActivity);
+    },
   });
 
   const [pauseActivity, { loading: pausing }] = useMutation(PAUSE_ACTIVITY, {
