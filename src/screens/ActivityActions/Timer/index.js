@@ -32,6 +32,7 @@ const Timer = () => {
   const { startHandler, resetHandler, time, modalizeRef } = useTimer();
 
   const { loading: loadingRecent, data } = useQuery(GET_RECENT_ACTIVITY, {
+    fetchPolicy: "cache-and-network",
     onError: (error) => toast.show(error, { type: "error" }),
   });
 
@@ -163,7 +164,12 @@ const Timer = () => {
         {loading || stopping || pausing ? (
           <ActivityIndicator size="large" color="white" />
         ) : (
-          <>
+          <View
+            style={{
+              flex: 1,
+              justifyContent: "center",
+            }}
+          >
             <Text
               style={{
                 ...styles.timerText,
@@ -177,7 +183,7 @@ const Timer = () => {
                 {currentActivity.title}
               </Text>
             )}
-          </>
+          </View>
         )}
       </View>
       <View style={{ alignItems: "center", justifyContent: "center" }}>
