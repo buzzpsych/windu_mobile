@@ -21,7 +21,6 @@ import { playImg, pauseImg, stopImg } from "../../../common/constants";
 import { activeActivityState } from "../../../recoil/atoms/activity";
 import { userState } from "../../../recoil/atoms/user";
 import { useTimer } from "../../../contexts/timer-context";
-import { updateRecentActivities } from "../../../common/cacheUtilities";
 import styles from "./styles";
 
 const Timer = () => {
@@ -31,7 +30,11 @@ const Timer = () => {
 
   const { startHandler, resetHandler, time, modalizeRef } = useTimer();
 
-  const { loading: loadingRecent, data } = useQuery(GET_RECENT_ACTIVITY, {
+  const {
+    loading: loadingRecent,
+    data,
+    refetch: refetchRecent,
+  } = useQuery(GET_RECENT_ACTIVITY, {
     fetchPolicy: "cache-and-network",
     onError: (error) => toast.show(error, { type: "error" }),
   });
@@ -49,12 +52,10 @@ const Timer = () => {
 
   const [stopActivity, { loading: stopping }] = useMutation(STOP_ACTIVITY, {
     onCompleted: ({ stopActivity }) => {
+      refetchRecent();
       toast.show(`${stopActivity.title} stopped`, { type: "success" });
     },
     onError: (error) => toast.show(error, { type: "error" }),
-    update: (cache, { data: { stopActivity } }) => {
-      updateRecentActivities(cache, stopActivity);
-    },
   });
 
   const [pauseActivity, { loading: pausing }] = useMutation(PAUSE_ACTIVITY, {
@@ -166,8 +167,8 @@ const Timer = () => {
         ) : (
           <View
             style={{
-              flex: 1,
               justifyContent: "center",
+              alignItems: "center",
             }}
           >
             <Text
