@@ -76,6 +76,7 @@ const OnBoard = ({ navigation, route }) => {
               name,
               avatar: photoUrl,
               timezone: Localization.timezone,
+              platform: "mobile",
             },
           },
         });
