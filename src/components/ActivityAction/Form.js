@@ -1,64 +1,98 @@
 import React, { useState } from "react";
-import { Input } from "react-native-elements";
-import { View, Text } from "react-native";
-import Button from "../../components/Button";
+import { ActivityIndicator } from "react-native";
+import { Button, Card } from "react-native-elements";
+import { useQuery } from "@apollo/client";
+import { Field } from "formik";
+import { map, uniqBy } from "lodash";
+import TextInput from "../formikFields/TextInput";
+import { GET_PROJECTS } from "../../graphql/queries/project/getProjects";
 import { styles } from "../../common/styles";
 import { Picker } from "@react-native-picker/picker";
 
-const Form = () => {
-  const [fieldData, setFieldData] = useState({
-    title: "",
-    description: "",
-    project: "",
+const sizePerPage = 10;
+const initialOffset = 0;
+const initialSearch = "";
+
+const defaultProjectFilters = {
+  status: "",
+  sort: `{"updated_at": -1}`,
+  relationship: "",
+};
+
+const Form = ({ handleSubmit, setFieldValue, values, isSubmitting }) => {
+  const [queryParameters, setQueryParameters] = useState({
+    size: sizePerPage,
+    offset: initialOffset,
+    search: initialSearch,
+    filters: defaultProjectFilters,
   });
-  const handleSubmit = () => {
-    console.log(fieldData);
-  };
-  const handleChange = (field, value) => {
-    setFieldData({ ...fieldData, [field]: value });
-  };
+  const [projects, setProjects] = useState([]);
+
+  const { loading: loadingProjects } = useQuery(GET_PROJECTS, {
+    variables: { input: queryParameters },
+    fetchPolicy: "cache-and-network",
+    onCompleted: ({ getProjects }) => {
+      setProjects(
+        uniqBy([...new Set([...projects, ...getProjects.data])], "_id")
+      );
+    },
+  });
+
   return (
-    <View
-      style={{
-        height: "100%",
-        alignItems: "center",
-        justifyContent: "center",
-        flex: 1,
+    <Card
+      containerStyle={{
+        borderRadius: 8,
+        paddingVertical: 20,
+        paddingHorizontal: 20,
       }}
     >
-      <Input
-        containerStyle={{ width: "80%" }}
+      <Field
         inputContainerStyle={{ borderBottomColor: "#F5A623" }}
-        placeholderTextColor="black"
-        labelStyle={{ color: "black" }}
-        label="Activity Title"
+        component={TextInput}
         placeholder="Title"
-        onChangeText={(v) => handleChange("title", v)}
+        label="Activity Title"
+        name="title"
       />
-      <Input
-        containerStyle={{ width: "80%" }}
-        placeholderTextColor="black"
+      <Field
         inputContainerStyle={{ borderBottomColor: "#F5A623" }}
-        labelStyle={{ color: "black" }}
-        label="Activity Description"
+        component={TextInput}
         placeholder="Description"
-        onChangeText={(v) => handleChange("description", v)}
+        label="Activity Description"
+        name="description"
       />
-
-      <Picker
-        selectedValue={fieldData.project}
-        style={{ height: 50, width: 150, marginBottom: 50 }}
-        onValueChange={(itemValue, itemIndex) =>
-          handleChange("project", itemValue)
-        }
-      >
-        <Picker.Item label="Java" value="java" />
-        <Picker.Item label="JavaScript" value="js" />
-      </Picker>
-      <Button onPress={handleSubmit} styles={styles.button}>
-        <Text>Submit</Text>
-      </Button>
-    </View>
+      {loadingProjects ? (
+        <ActivityIndicator
+          size="large"
+          color="#F5A623"
+          style={{ height: 50, marginBottom: 20 }}
+        />
+      ) : (
+        <Picker
+          selectedValue={values.project}
+          style={{
+            height: 50,
+            width: 150,
+            marginBottom: 20,
+            alignSelf: "center",
+          }}
+          onValueChange={(itemValue) => setFieldValue("project", itemValue)}
+        >
+          {map(projects, (project) => (
+            <Picker.Item
+              key={project._id}
+              label={project.title}
+              value={project._id}
+            />
+          ))}
+        </Picker>
+      )}
+      <Button
+        buttonStyle={styles.button}
+        onPress={() => handleSubmit()}
+        title="Start"
+        loading={isSubmitting}
+      />
+    </Card>
   );
 };
 export default Form;

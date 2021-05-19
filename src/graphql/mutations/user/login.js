@@ -1,10 +1,9 @@
 import gql from "graphql-tag";
 
-export const LOGIN_WITH_GOOGLE = gql`
-  mutation googleLogin($input: googleLoginInput) {
-    googleLogin(input: $input) {
+export const LOGIN = gql`
+  mutation login($input: loginInput) {
+    login(input: $input) {
       token
-      new_user
       user {
         user_type
         _id
@@ -14,6 +13,7 @@ export const LOGIN_WITH_GOOGLE = gql`
         occupation
         unreadMessages
       }
+      createdAt
     }
   }
 `;

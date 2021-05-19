@@ -1,14 +1,14 @@
-import { ApolloClient, InMemoryCache, split } from "@apollo/client";
+import { ApolloClient, InMemoryCache, split, from } from "@apollo/client";
 import { setContext } from "@apollo/client/link/context";
+import { SubscriptionClient } from "subscriptions-transport-ws";
 import { WebSocketLink } from "@apollo/client/link/ws";
 import { getMainDefinition } from "@apollo/client/utilities";
 import { onError } from "apollo-link-error";
 import { createUploadLink } from "apollo-upload-client"; // Allows FileList, File, Blob or ReactNativeFile instances within query or mutation variables and sends GraphQL multipart requests
 import { graphql, graphqlws } from "../../common/constants";
+import { readData } from "../../store/utils";
 
-import { readData, clearStorage } from "../../store/utils";
-
-const errorLink = onError(({ graphQLErrors, networkError, ...props }) => {
+const errorLink = onError(({ networkError }) => {
   if (networkError) {
     const error = JSON.stringify(networkError);
     const errorParsed = JSON.parse(error);
@@ -18,42 +18,38 @@ const errorLink = onError(({ graphQLErrors, networkError, ...props }) => {
     )
       console.warn(`[Network error]: ${networkError}`);
   }
-
-  if (graphQLErrors) {
-    graphQLErrors.forEach(({ message, locations, path, extensions }) => {
-      if (extensions.code === "UNAUTHENTICATED") {
-        clearStorage();
-      }
-    });
-  }
 });
-let httpLink = createUploadLink({
+
+const httpLink = createUploadLink({
   uri: graphql,
 });
 
 const authLink = setContext(async (_, { headers }) => {
+  const token = await readData("@token");
+
   return {
     headers: {
       ...headers,
-      authorization: `Bearer ${await readData("@token")}`,
+      authorization: `Bearer ${token || ""}`,
     },
   };
 });
 
-httpLink = authLink.concat(httpLink);
-httpLink = errorLink.concat(httpLink);
+const links = from([authLink, errorLink, httpLink]);
 
-const wsLink = setContext(async (_, { headers }) => {
-  new WebSocketLink({
-    uri: graphqlws,
-    options: {
-      reconnect: true,
-      connectionParams: {
-        Authorization: `Bearer ${await readData("@token")}`,
-      },
-    },
-  });
+const wsClient = new SubscriptionClient(graphqlws, {
+  lazy: true,
+  reconnect: true,
+  connectionParams: async () => {
+    const token = await readData("@token");
+
+    return {
+      Authorization: `Bearer ${token || ""}`,
+    };
+  },
 });
+
+const wsLink = new WebSocketLink(wsClient);
 
 const splitLink = split(
   ({ query }) => {
@@ -64,7 +60,7 @@ const splitLink = split(
     );
   },
   wsLink,
-  httpLink
+  links
 );
 
 const cache = new InMemoryCache({

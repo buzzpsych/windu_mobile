@@ -1,52 +1,46 @@
-import React, { useState, useEffect } from "react";
-import { StyleSheet, View, Image, Text } from "react-native";
+import React from "react";
+import { View, Image, Dimensions } from "react-native";
+import { Button, Text } from "react-native-elements";
 import { useMutation } from "@apollo/client";
-import { BottomSheet } from "react-native-elements";
-import Button from "../../components/Button";
+import { GoogleSocialButton } from "react-native-social-buttons";
+import { Modalize } from "react-native-modalize";
 import Login from "../../components/Login";
+import { winduLogo, loginImg } from "../../common/constants";
 import { LOGIN_WITH_GOOGLE } from "../../graphql/mutations/user/googleLogin";
+import { LOGIN } from "../../graphql/mutations/user/login";
 import * as Google from "expo-google-app-auth"; //google auth libraries
 import * as Localization from "expo-localization";
 import { saveData } from "../../store/utils";
-import googleBtnImage from "../../../assets/btn_google.png";
-
 import { useRecoilState } from "recoil";
 import { userState } from "../../recoil/atoms/user";
+import styles from "./styles";
 
-const OnBoard = ({ navigation, route }) => {
-  const [user, setUser] = useRecoilState(userState);
-  const [googleLogin, { loadingGoogle }] = useMutation(LOGIN_WITH_GOOGLE, {
-    onError: (error) => {
-      alert(error);
-    },
-    onCompleted: async (data) => {
-      saveData("@token", data?.googleLogin?.token);
-      setUser(true);
-      if (data?.googleLogin?.new_user) {
-        /// new onboard
-      } else {
-        ///
-      }
+const OnBoard = () => {
+  const [_, setUser] = useRecoilState(userState);
+  const windowHeight = Dimensions.get("window").height;
+  const modalizeRef = React.useRef();
+
+  const onOpen = () => modalizeRef.current?.open();
+  const onClose = () => modalizeRef.current?.close();
+
+  const [googleLogin] = useMutation(LOGIN_WITH_GOOGLE, {
+    onError: (error) => alert(error),
+    onCompleted: ({ googleLogin }) => {
+      const { token, user } = googleLogin;
+      saveData("@token", token);
+      saveData("@user", JSON.stringify(user));
+      setUser(user);
     },
   });
 
-  const [isVisible, setIsVisible] = useState(false);
-  const styles = StyleSheet.create({
-    container: {
-      flex: 1,
-      backgroundColor: "#fff",
-      alignItems: "center",
-      justifyContent: "center",
-    },
-    button: {
-      marginTop: 10,
-      width: "100%",
-      justifyContent: "center",
-      alignItems: "center",
-      backgroundColor: "#F5A623",
-      width: "50%",
-      margin: "auto",
-      height: 40,
+  const [login, { loadingLogin }] = useMutation(LOGIN, {
+    onError: (error) => alert(error),
+    onCompleted: ({ login }) => {
+      const { token, user } = login;
+      saveData("@token", token);
+      saveData("@user", JSON.stringify(user));
+      setUser(user);
+      onClose();
     },
   });
 
@@ -76,6 +70,7 @@ const OnBoard = ({ navigation, route }) => {
               name,
               avatar: photoUrl,
               timezone: Localization.timezone,
+              platform: "mobile",
             },
           },
         });
@@ -87,87 +82,59 @@ const OnBoard = ({ navigation, route }) => {
     }
   };
 
-  const handleSubmit = (v) => {
-    console.log(v);
+  const handleSubmit = (values) => {
+    const { email, password } = values;
 
-    setIsVisible(false);
-  };
-
-  const login = () => {
-    Glogin();
+    login({
+      variables: {
+        input: {
+          email,
+          password,
+          platform: "mobile",
+        },
+      },
+    });
   };
 
   return (
     <>
-      <View
-        style={{
-          flex: 1,
-          backgroundColor: "#fff",
-        }}
-      >
-        <View
-          style={{
-            alignItems: "center",
-            height: 100,
-            justifyContent: "center",
-            flex: 1,
-          }}
-        >
+      <View style={styles.mainContainer}>
+        <View style={styles.logoContainer}>
           <Image
-            style={{ height: 50, width: 50 }}
+            style={styles.logo}
             source={{
-              uri:
-                "https://windu.s3.us-east-2.amazonaws.com/assets/mobile/logo.png",
+              uri: winduLogo,
             }}
             resizeMode="contain"
           />
         </View>
-
-        <View
-          style={{
-            backgroundColor: "#f0f2f5",
-            height: 400,
-            width: "80%",
-            alignItems: "center",
-            justifyContent: "center",
-            marginLeft: "auto",
-            marginRight: "auto",
-            color: "white",
-          }}
-        >
+        <View style={{ flex: 3 }}>
           <Image
-            style={{ height: "100%", width: "100%" }}
+            style={styles.img}
             source={{
-              uri:
-                "https://windu.s3.us-east-2.amazonaws.com/assets/mobile/mobile_1.png",
+              uri: loginImg,
             }}
             resizeMode="contain"
           />
         </View>
-        <View style={styles.container}>
-          <Button onPress={login}>
-            <Image
-              style={{ margin: "auto", height: 50 }}
-              source={googleBtnImage}
-              resizeMode="contain"
-            />
-          </Button>
-          <Button
-            styles={styles.button}
-            color="red"
-            onPress={() => setIsVisible(true)}
-          >
-            <Text>Login</Text>
-          </Button>
-          <Text style={{ marginTop: 10 }}> register at www.windu.io</Text>
+        <View style={styles.buttonsContainer}>
+          <GoogleSocialButton
+            onPress={() => Glogin()}
+            buttonViewStyle={{ alignSelf: "center", width: "50%" }}
+          />
+          <Button title="Login" buttonStyle={styles.button} onPress={onOpen} />
+          <Text style={{ marginTop: 20, alignSelf: "center" }}>
+            Register at www.windu.io
+          </Text>
         </View>
       </View>
-      <BottomSheet
-        isVisible={isVisible}
-        containerStyle={{ backgroundColor: "rgba(0.5, 0.25, 0, 0.2)" }}
+      <Modalize
+        ref={modalizeRef}
+        withHandle={true}
+        modalTopOffset={windowHeight - 400}
       >
-        <Login onsubmit={handleSubmit} />
-      </BottomSheet>
+        <Login onsubmit={handleSubmit} loading={loadingLogin} />
+      </Modalize>
     </>
   );
 };

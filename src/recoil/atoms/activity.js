@@ -7,5 +7,8 @@ export const showActivityFormState = atom({
 
 export const activeActivityState = atom({
   key: "activeActivityState",
-  default: false,
+  default: {
+    data: null,
+    active: false,
+  },
 });

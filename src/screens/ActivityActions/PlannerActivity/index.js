@@ -87,12 +87,12 @@ const PlannerActivity = () => {
           paddingBottom: 20,
         }}
       >
-        <FlatList
+{/*         <FlatList
           style={{ width: "80%" }}
           data={data}
           renderItem={renderItem}
           keyExtractor={(item) => item.id}
-        />
+        /> */}
       </View>
       <View
         style={{ height: "30%", justifyContent: "flex-end", width: "100%" }}
@@ -144,12 +144,12 @@ const PlannerActivity = () => {
           selectedDate={moment()}
           onDateSelected={handleChange}
         />
-        <OverlayMenu
+{/*         <OverlayMenu
           onPress={handleMenuItemSelect}
           options={[{ label: "Plan Activity", id: "plan" }]}
           visible={showMenu}
           onClose={() => setShowMenu(false)}
-        />
+        /> */}
       </View>
       <PlanActivityModal
         onclose={() => setShowPlanModal(false)}
