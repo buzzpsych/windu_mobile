@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { ActivityIndicator } from "react-native";
-import { Input, Button, Card } from "react-native-elements";
+import { Button, Card } from "react-native-elements";
 import { useQuery } from "@apollo/client";
 import { Field } from "formik";
 import { map, uniqBy } from "lodash";

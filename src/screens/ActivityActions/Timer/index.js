@@ -251,24 +251,25 @@ const Timer = () => {
             </View>
           )}
         </View>
-        <View style={styles.recentContainer}>
-          <View style={{ width: "100%", marginBottom: 20 }}>
-            <Text h4 style={{ color: "#989898" }}>
-              Recent Activity
-            </Text>
-          </View>
-          {loadingRecent ? (
-            <ActivityIndicator size="large" color="#F5A623" />
-          ) : (
-            <FlatList
-              style={{ width: "100%" }}
-              data={data?.getRecentActivity?.month}
-              renderItem={renderItem}
-              keyExtractor={(item) => item._id}
-            />
-          )}
-        </View>
       </ScrollView>
+      <View style={styles.recentContainer}>
+        <View style={{ width: "100%", marginBottom: 20 }}>
+          <Text h4 style={{ color: "#989898" }}>
+            Recent Activity
+          </Text>
+        </View>
+        {loadingRecent ? (
+          <ActivityIndicator size="large" color="#F5A623" />
+        ) : (
+          <FlatList
+            nestedScrollEnabled={true}
+            style={{ width: "100%" }}
+            data={data?.getRecentActivity?.month}
+            renderItem={renderItem}
+            keyExtractor={(item) => item._id}
+          />
+        )}
+      </View>
     </View>
   );
 };

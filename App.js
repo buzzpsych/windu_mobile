@@ -1,5 +1,5 @@
 import React, { useEffect } from "react";
-import { StyleSheet, Image, Text } from "react-native";
+import { StyleSheet, Image, Text, ActivityIndicator } from "react-native";
 import "react-native-gesture-handler";
 import { NavigationContainer } from "@react-navigation/native";
 import { createStackNavigator } from "@react-navigation/stack";
@@ -55,6 +55,7 @@ const App = () => {
   const [newUser, setNewUser] = React.useState(false);
   const [user, setUser] = useRecoilState(userState);
   const [navState, setNavState] = React.useState(null);
+  const [loadingUser, setLoadingUser] = React.useState(true);
   const Stack = createStackNavigator();
   const Tab = createBottomTabNavigator();
 
@@ -62,8 +63,11 @@ const App = () => {
     (async () => {
       const user = await readData("@user");
       setUser(JSON.parse(user));
+      setLoadingUser(false);
     })();
   }, []);
+
+  if (loadingUser) return <ActivityIndicator size="large" color="#F5A623" />;
 
   if (newUser)
     return (
