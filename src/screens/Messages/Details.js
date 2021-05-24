@@ -1,152 +1,195 @@
-import React, { useState } from "react";
-import { View, FlatList, Dimensions, Text, ScrollView } from "react-native";
-import { Input } from "react-native-elements";
-
+import React from "react";
+import { View, FlatList, Dimensions, TextInput } from "react-native";
+import { useLazyQuery, useMutation } from "@apollo/client";
+import { Icon, Button } from "react-native-elements";
+import _ from "lodash";
+import { useRecoilValue, useRecoilState } from "recoil";
+import { userSelectedState, userMessages } from "../../recoil/atoms/message";
+import { userState } from "../../recoil/atoms/user";
+import { GET_MESSAGES } from "../../graphql/queries/messages/getMessages";
+import { MARK_AS_READ } from "../../graphql/mutations/messages/markAsReadMessages";
 import UserMessage from "../Messages/UserMessage";
-import Button from "../../components/Button";
+
+const limit = 50;
+const page = 0;
 
 const MessageDetails = () => {
-  const [message, setMessage] = useState("");
-  const signedInUser = "evan@fishyvisions.com";
-  const messages = [
-    {
-      _id: "6075b4821223123193ea022",
-      content: "what do you mean?",
-      created_at: "2021-04-13T16:05:11.284Z",
-      from: "tyler@fishyvisions.com",
-      to: "evan@fishyvisions.com",
-      unread: false,
-    },
-    {
-      _id: "6075b48219b0b56d193ea022",
-      content: "Tyler please use windu, you havent used it for wireframing !",
-      created_at: "2021-04-13T15:10:58.561Z",
-      from: "evan@fishyvisions.com",
-      to: "tyler@fishyvisions.com",
-      unread: false,
-    },
-    {
-      content: "soon there will be a large list of active orkers",
-      created_at: "2021-04-02T23:49:27.865Z",
-      from: "evan@fishyvisions.com",
-      to: "tyler@fishyvisions.com",
-      unread: false,
-      _id: "6067ad8786ed4712e3230e5d",
-    },
-    {
-      content: "soon there will be a large list of active orkers",
-      created_at: "2021-04-02T23:49:27.865Z",
-      from: "evan@fishyvisions.com",
-      to: "tyler@fishyvisions.com",
-      unread: false,
-      _id: "6067ad8786ed4712e3230e5d",
-    },
-    {
-      content: "soon there will be a large list of active orkers",
-      created_at: "2021-04-02T23:49:27.865Z",
-      from: "evan@fishyvisions.com",
-      to: "tyler@fishyvisions.com",
-      unread: false,
-      _id: "6067ad8786ed4712e3230e5d",
-    },
-    {
-      content: "soon there will be a large list of active orkers",
-      created_at: "2021-04-02T23:49:27.865Z",
-      from: "evan@fishyvisions.com",
-      to: "tyler@fishyvisions.com",
-      unread: false,
-      _id: "6067ad8786ed4712e3230e5d",
-    },
-    {
-      content: "soon there will be a large list of active orkers",
-      created_at: "2021-04-02T23:49:27.865Z",
-      from: "evan@fishyvisions.com",
-      to: "tyler@fishyvisions.com",
-      unread: false,
-      _id: "6067ad8786ed4712e3230e5d",
-    },
-    {
-      content: "soon there will be a large list of active orkers",
-      created_at: "2021-04-02T23:49:27.865Z",
-      from: "evan@fishyvisions.com",
-      to: "tyler@fishyvisions.com",
-      unread: false,
-      _id: "6067ad8786ed4712e3230e5d",
-    },
-    {
-      _id: "6075b4821223123193ea022",
-      content: "LAST",
-      created_at: "2021-04-13T16:05:11.284Z",
-      from: "tyler@fishyvisions.com",
-      to: "evan@fishyvisions.com",
-      unread: false,
-    },
-  ];
+  const [newMessage, setNewMessage] = React.useState("");
+  const userSelected = useRecoilValue(userSelectedState);
+  const userSession = useRecoilValue(userState);
+  const [messages, setMessages] = useRecoilState(userMessages);
 
-  const renderItem = ({ item }) => {
-    const myMessage = signedInUser === item.from;
+  const [markRead] = useMutation(MARK_AS_READ);
+
+  const [getMessages, { data, loading }] = useLazyQuery(GET_MESSAGES, {
+    fetchPolicy: "cache-and-network",
+    notifyOnNetworkStatusChange: true,
+    onCompleted: ({ getMessages }) => {
+      let messagesCopy = _.cloneDeep(messages);
+      const index = _.findIndex(
+        messagesCopy,
+        (message) => message.email === userSelected.email
+      );
+
+      if (index >= 0) {
+        const gatherMessages = _.unionBy(
+          messagesCopy[index].messages,
+          getMessages,
+          "_id"
+        );
+        const messagesMarked = markAsRead(gatherMessages);
+        messagesCopy[index] = {
+          ...messagesCopy[index],
+          messages: messagesMarked,
+        };
+      } else {
+        const messagesMarked = markAsRead(getMessages);
+        messagesCopy = [
+          ...messagesCopy,
+          {
+            email: userSelected.email,
+            messages: messagesMarked,
+            limit,
+            page,
+          },
+        ];
+      }
+
+      setMessages(messagesCopy);
+    },
+  });
+
+  const markAsRead = (messages) => {
+    const messagesCopy = _.cloneDeep(messages);
+    const messagesUpdated = _.map(messagesCopy, (message) => {
+      if (message.unread) message.unread = false;
+
+      return message;
+    });
+
+    markRead({ variables: { from: userSelected.email } }); // updating messages status in server
+
+    return messagesUpdated;
+  };
+
+  const getUserMessages = () => {
+    const userMessages = _.find(
+      messages,
+      (message) => message.email === userSelected.email
+    );
+
+    if (!userMessages) {
+      getMessages({
+        variables: {
+          from: userSelected.email,
+          limit,
+          page: userMessages?.page || 0,
+        },
+      });
+      return;
+    }
+
+    const hasUnreadMessages = _.filter(
+      userMessages.messages,
+      (message) => message.unread === true && message.to === user.email
+    );
+
+    if (userMessages && _.size(hasUnreadMessages) > 0) {
+      markRead({
+        variables: { from: userSelected.email },
+      }); // updating messages status in server if user is selected
+    }
+  };
+
+  React.useEffect(() => {
+    if (!_.isEmpty(userSelected)) getUserMessages();
+  }, [userSelected]);
+
+  const keyExtractor = (item) => item._id;
+
+  const getMessagesUserSelected = _.find(
+    messages,
+    (message) => message.email === userSelected.email
+  );
+
+  const renderItem = ({ item, index }) => {
+    const sent = item.from === userSession.email;
+    const userInfo =
+      item.from === userSession.email ? userSession : userSelected;
+    const withAvatar =
+      item.from !== getMessagesUserSelected?.messages[index + 1]?.from;
 
     return (
       <UserMessage
-        align={myMessage ? "right" : "left"}
-        content={item.content}
+        message={item}
+        userInfo={userInfo}
+        sent={sent}
+        withAvatar={withAvatar}
       />
     );
   };
-  const keyExtractor = (item, index) => item.id;
 
   return (
-    <>
+    <View style={{ flex: 1 }}>
       <View
         style={{
-          paddingTop: 50,
-          height: Dimensions.get("window").height - 200,
+          height: Dimensions.get("window").height - 180,
         }}
       >
         <FlatList
-          data={messages}
+          inverted
+          data={getMessagesUserSelected?.messages}
           keyExtractor={keyExtractor}
           renderItem={renderItem}
           initialScrollIndex={messages.length - 1}
+          initialNumToRender={50}
         />
       </View>
-      <View style={{ padding: 10, flexDirection: "row" }}>
-        <Input
-          containerStyle={{ width: "80%" }}
-          placeholder="Send a message"
-          onChangeText={(value) => setMessage(value)}
-          value={message}
-          inputContainerStyle={{
-            borderTopWidth: 1,
-            borderLeftWidth: 1,
-            borderBottomWidth: 1,
-            borderRightWidth: 1,
-            borderColor: "gray",
-            borderTopLeftRadius: 5,
-            borderTopRightRadius: 5,
-            borderBottomLeftRadius: 5,
-            borderBottomRightRadius: 5,
-          }}
-        />
-        <Button
-          styles={{
-            justifyContent: "center",
-            alignItems: "center",
-            backgroundColor: "#F5A623",
-            marginLeft: "auto",
-            marginRight: "auto",
-            height: 40,
-            padding: 10,
-            borderTopLeftRadius: 5,
-            borderTopRightRadius: 5,
-            borderBottomLeftRadius: 5,
-            borderBottomRightRadius: 5,
-          }}
-        >
-          <Text>Send</Text>
-        </Button>
+      <View
+        style={{
+          flexDirection: "row",
+          alignItems: "center",
+          justifyContent: "space-around",
+        }}
+      >
+        <View style={{ flex: 2.5 }}>
+          <TextInput
+            placeholder="Send a message"
+            onChangeText={(value) => setNewMessage(value)}
+            value={newMessage}
+            style={{
+              height: 40,
+              marginHorizontal: 10,
+              borderTopWidth: 1,
+              borderLeftWidth: 1,
+              borderBottomWidth: 1,
+              borderRightWidth: 1,
+              borderColor: "gray",
+              backgroundColor: "white",
+              paddingHorizontal: 10,
+              borderTopLeftRadius: 5,
+              borderTopRightRadius: 5,
+              borderBottomLeftRadius: 5,
+              borderBottomRightRadius: 5,
+            }}
+          />
+        </View>
+        <View style={{ flex: 0.5 }}>
+          <Button
+            buttonStyle={{
+              justifyContent: "center",
+              alignItems: "center",
+              backgroundColor: "#F5A623",
+              marginRight: 10,
+              height: 40,
+            }}
+            icon={
+              <Icon name="send" type="font-awesome" size={20} color="white" />
+            }
+          />
+        </View>
       </View>
-    </>
+    </View>
   );
 };
 export default MessageDetails;

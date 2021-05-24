@@ -5,15 +5,18 @@ import {
   ActivityIndicator,
   RefreshControl,
 } from "react-native";
+import { truncate } from "lodash";
 import { useRecoilState } from "recoil";
 import { ListItem, Avatar, SearchBar, Badge } from "react-native-elements";
 import { useQuery } from "@apollo/client";
 import moment from "moment";
 import { usersList } from "../../recoil/atoms/user";
+import { userSelectedState } from "../../recoil/atoms/message";
 import { GET_OTHER_USERS_MESSAGES } from "../../graphql/queries/messages/getOtherUsersMessages";
 
 const MessagesList = ({ navigation }) => {
   const [users, setUsers] = useRecoilState(usersList);
+  const [_, setUserSelected] = useRecoilState(userSelectedState);
   const [search, setSearch] = useState("");
 
   const { loading, refetch } = useQuery(GET_OTHER_USERS_MESSAGES, {
@@ -26,7 +29,8 @@ const MessagesList = ({ navigation }) => {
 
   const keyExtractor = (_, index) => index.toString();
 
-  const handleDetails = () => {
+  const handleDetails = (user) => {
+    setUserSelected(user);
     navigation.navigate("Details", { names: ["Brent", "Satya", "Michaś"] });
   };
 
@@ -39,7 +43,7 @@ const MessagesList = ({ navigation }) => {
       item.avatar || `https://ui-avatars.com/api/?name=${item?.full_name}`;
 
     return (
-      <ListItem onPress={handleDetails} bottomDivider>
+      <ListItem onPress={() => handleDetails(item)} bottomDivider>
         <View>
           <Avatar rounded source={{ uri: avatarSrc }} />
           <Badge
@@ -49,7 +53,9 @@ const MessagesList = ({ navigation }) => {
         </View>
         <ListItem.Content>
           <ListItem.Title>{item.full_name}</ListItem.Title>
-          <ListItem.Subtitle>{item.latestMessage.content}</ListItem.Subtitle>
+          <ListItem.Subtitle>
+            {truncate(item.latestMessage.content, { length: 30 })}
+          </ListItem.Subtitle>
         </ListItem.Content>
         <ListItem.Content>
           <ListItem.Subtitle>

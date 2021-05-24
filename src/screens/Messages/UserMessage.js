@@ -6,48 +6,29 @@ import { StyleSheet } from "react-native";
 const styles = StyleSheet.create({
   message: {
     flexDirection: "row",
-    marginBottom: 15,
     justifyContent: "space-between",
-    padding: 10,
+    paddingVertical: 5,
+    paddingHorizontal: 10,
   },
 });
 
-const UserMessage = ({ style, content, align }) => {
-  if (align === "left") {
-    return (
-      <View style={styles.message}>
+const UserMessage = ({ message, userInfo, sent, withAvatar }) => {
+  const avatarSrc =
+    userInfo.avatar ||
+    `https://ui-avatars.com/api/?name=${userInfo?.full_name}`;
+
+  return (
+    <View style={styles.message}>
+      {withAvatar && !sent && (
         <Avatar
           rounded
           source={{
-            uri:
-              "https://s3.amazonaws.com/uifaces/faces/twitter/ladylexy/128.jpg",
+            uri: avatarSrc,
           }}
         />
-        <View
-          style={[
-            style,
-            {
-              borderTopLeftRadius: 10,
-              borderTopRightRadius: 10,
-              borderBottomLeftRadius: 10,
-              borderBottomRightRadius: 10,
-              padding: 10,
-              justifyContent: "center",
-              width: Dimensions.get("window").width - 80,
-              backgroundColor: "#4e35c2",
-            },
-          ]}
-        >
-          <Text style={{ color: "white" }}>{content}</Text>
-        </View>
-      </View>
-    );
-  }
-  return (
-    <View style={styles.message}>
+      )}
       <View
         style={[
-          style,
           {
             borderTopLeftRadius: 10,
             borderTopRightRadius: 10,
@@ -55,20 +36,24 @@ const UserMessage = ({ style, content, align }) => {
             borderBottomRightRadius: 10,
             padding: 10,
             justifyContent: "center",
-            width: Dimensions.get("window").width - 80,
-            backgroundColor: "#e2e8f0",
+            marginLeft: !sent && !withAvatar ? 40 : 0,
+            width: Dimensions.get("window").width - 60,
+            backgroundColor: sent ? "#e2e8f0" : "#4e35c2",
           },
         ]}
       >
-        <Text style={{ color: "black" }}>{content}</Text>
+        <Text style={{ color: sent ? "black" : "white" }}>
+          {message.content}
+        </Text>
       </View>
-      <Avatar
-        rounded
-        source={{
-          uri:
-            "https://s3.amazonaws.com/uifaces/faces/twitter/ladylexy/128.jpg",
-        }}
-      />
+      {withAvatar && sent && (
+        <Avatar
+          rounded
+          source={{
+            uri: avatarSrc,
+          }}
+        />
+      )}
     </View>
   );
 };
