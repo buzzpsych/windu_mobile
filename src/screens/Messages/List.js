@@ -1,27 +1,30 @@
 import React, { useState } from "react";
-import { View, StyleSheet, FlatList } from "react-native";
-import { ListItem, Avatar, SearchBar } from "react-native-elements";
-import { createMaterialTopTabNavigator } from "@react-navigation/material-top-tabs";
-
-const Tab = createMaterialTopTabNavigator();
+import {
+  View,
+  FlatList,
+  ActivityIndicator,
+  RefreshControl,
+} from "react-native";
+import { useRecoilState } from "recoil";
+import { ListItem, Avatar, SearchBar, Badge } from "react-native-elements";
+import { useQuery } from "@apollo/client";
+import moment from "moment";
+import { usersList } from "../../recoil/atoms/user";
+import { GET_OTHER_USERS_MESSAGES } from "../../graphql/queries/messages/getOtherUsersMessages";
 
 const MessagesList = ({ navigation }) => {
+  const [users, setUsers] = useRecoilState(usersList);
   const [search, setSearch] = useState("");
-  const list = [
-    {
-      name: "Amy Farha",
-      avatar_url:
-        "https://s3.amazonaws.com/uifaces/faces/twitter/ladylexy/128.jpg",
-      subtitle: "Vice President",
+
+  const { loading, refetch } = useQuery(GET_OTHER_USERS_MESSAGES, {
+    variables: { search },
+    fetchPolicy: "cache-and-network",
+    onCompleted: ({ getOtherUsersMessages }) => {
+      setUsers(getOtherUsersMessages);
     },
-    {
-      name: "Chris Jackson",
-      avatar_url:
-        "https://s3.amazonaws.com/uifaces/faces/twitter/adhamdannaway/128.jpg",
-      subtitle: "Vice Chairman",
-    },
-  ];
-  const keyExtractor = (item, index) => index.toString();
+  });
+
+  const keyExtractor = (_, index) => index.toString();
 
   const handleDetails = () => {
     navigation.navigate("Details", { names: ["Brent", "Satya", "Michaś"] });
@@ -31,32 +34,31 @@ const MessagesList = ({ navigation }) => {
     setSearch(search);
   };
 
-  const renderItem = ({ item }) => (
-    <ListItem onPress={handleDetails} bottomDivider>
-      <Avatar source={{ uri: item.avatar_url }} />
-      <ListItem.Content>
-        <ListItem.Title>{item.name}</ListItem.Title>
-        <ListItem.Subtitle>{item.subtitle}</ListItem.Subtitle>
-      </ListItem.Content>
-    </ListItem>
-  );
+  const renderItem = ({ item }) => {
+    const avatarSrc =
+      item.avatar || `https://ui-avatars.com/api/?name=${item?.full_name}`;
 
-  const Members = () => (
-    <FlatList keyExtractor={keyExtractor} data={list} renderItem={renderItem} />
-  );
-
-  const Clients = () => (
-    <FlatList keyExtractor={keyExtractor} data={list} renderItem={renderItem} />
-  );
-
-  const styles = StyleSheet.create({
-    tabBackground: {
-      backgroundColor: "#F0F2F5",
-      shadowOpacity: 0,
-      elevation: 0,
-    },
-    indicator: { backgroundColor: "#F5A623" },
-  });
+    return (
+      <ListItem onPress={handleDetails} bottomDivider>
+        <View>
+          <Avatar rounded source={{ uri: avatarSrc }} />
+          <Badge
+            status="success"
+            containerStyle={{ position: "absolute", top: -2, right: -2 }}
+          />
+        </View>
+        <ListItem.Content>
+          <ListItem.Title>{item.full_name}</ListItem.Title>
+          <ListItem.Subtitle>{item.latestMessage.content}</ListItem.Subtitle>
+        </ListItem.Content>
+        <ListItem.Content>
+          <ListItem.Subtitle>
+            {moment(item.latestMessage.created_at).fromNow()}
+          </ListItem.Subtitle>
+        </ListItem.Content>
+      </ListItem>
+    );
+  };
 
   return (
     <View style={{ backgroundColor: "#F0F2F5", flex: 1 }}>
@@ -64,20 +66,21 @@ const MessagesList = ({ navigation }) => {
         placeholder="Type Here..."
         onChangeText={updateSearch}
         value={search}
+        lightTheme={true}
       />
-      <Tab.Navigator
-        tabBarOptions={{
-          showIcon: true,
-          style: styles.tabBackground,
-          tabStyle: styles.tab,
-          activeTintColor: "#F5A623",
-          indicatorStyle: styles.indicator,
-        }}
-        style={styles.container}
-      >
-        <Tab.Screen name="Members" component={Members} />
-        <Tab.Screen name="Clients" component={Clients} />
-      </Tab.Navigator>
+
+      {loading ? (
+        <ActivityIndicator size="large" color="#F5A623" />
+      ) : (
+        <FlatList
+          keyExtractor={keyExtractor}
+          data={users}
+          renderItem={renderItem}
+          renderScrollComponent={() => (
+            <RefreshControl onRefresh={refetch} refreshing={loading} />
+          )}
+        />
+      )}
     </View>
   );
 };
