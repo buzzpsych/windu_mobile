@@ -73,10 +73,20 @@ const MessagesList = ({ navigation }) => {
         onChangeText={updateSearch}
         value={search}
         lightTheme={true}
+        inputStyle={{ color: "black" }}
       />
 
       {loading ? (
-        <ActivityIndicator size="large" color="#F5A623" />
+        <View
+          style={{
+            flex: 0.9,
+            flexDirection: "column",
+            justifyContent: "center",
+            alignItems: "center",
+          }}
+        >
+          <ActivityIndicator size="large" color="#F5A623" />
+        </View>
       ) : (
         <FlatList
           keyExtractor={keyExtractor}

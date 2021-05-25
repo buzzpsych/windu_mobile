@@ -1,14 +1,22 @@
 import React from "react";
-import { View, FlatList, Dimensions, TextInput } from "react-native";
+import {
+  View,
+  FlatList,
+  Dimensions,
+  TextInput,
+  ActivityIndicator,
+} from "react-native";
 import { useLazyQuery, useMutation } from "@apollo/client";
 import { Icon, Button } from "react-native-elements";
 import _ from "lodash";
 import { useRecoilValue, useRecoilState } from "recoil";
 import { userSelectedState, userMessages } from "../../recoil/atoms/message";
 import { userState } from "../../recoil/atoms/user";
+import { SEND_MESSAGE } from "../../graphql/mutations/messages/sendMessage";
 import { GET_MESSAGES } from "../../graphql/queries/messages/getMessages";
 import { MARK_AS_READ } from "../../graphql/mutations/messages/markAsReadMessages";
 import UserMessage from "../Messages/UserMessage";
+import styles from "./styles";
 
 const limit = 50;
 const page = 0;
@@ -20,8 +28,9 @@ const MessageDetails = () => {
   const [messages, setMessages] = useRecoilState(userMessages);
 
   const [markRead] = useMutation(MARK_AS_READ);
+  const [sendMessage] = useMutation(SEND_MESSAGE);
 
-  const [getMessages, { data, loading }] = useLazyQuery(GET_MESSAGES, {
+  const [getMessages, { data, loading, refetch }] = useLazyQuery(GET_MESSAGES, {
     fetchPolicy: "cache-and-network",
     notifyOnNetworkStatusChange: true,
     onCompleted: ({ getMessages }) => {
@@ -58,6 +67,15 @@ const MessageDetails = () => {
       setMessages(messagesCopy);
     },
   });
+
+  const onSend = () => {
+    if (newMessage.trim() === "") return;
+
+    sendMessage({
+      variables: { to: userSelected.email, content: newMessage },
+    });
+    setNewMessage("");
+  };
 
   const markAsRead = (messages) => {
     const messagesCopy = _.cloneDeep(messages);
@@ -136,14 +154,26 @@ const MessageDetails = () => {
           height: Dimensions.get("window").height - 180,
         }}
       >
-        <FlatList
-          inverted
-          data={getMessagesUserSelected?.messages}
-          keyExtractor={keyExtractor}
-          renderItem={renderItem}
-          initialScrollIndex={messages.length - 1}
-          initialNumToRender={50}
-        />
+        {loading ? (
+          <View
+            style={{
+              flex: 0.9,
+              flexDirection: "column",
+              justifyContent: "center",
+              alignItems: "center",
+            }}
+          >
+            <ActivityIndicator size="large" color="#F5A623" />
+          </View>
+        ) : (
+          <FlatList
+            inverted={true}
+            data={getMessagesUserSelected?.messages}
+            keyExtractor={keyExtractor}
+            renderItem={renderItem}
+            initialNumToRender={_.size(getMessagesUserSelected?.messages)}
+          />
+        )}
       </View>
       <View
         style={{
@@ -157,21 +187,7 @@ const MessageDetails = () => {
             placeholder="Send a message"
             onChangeText={(value) => setNewMessage(value)}
             value={newMessage}
-            style={{
-              height: 40,
-              marginHorizontal: 10,
-              borderTopWidth: 1,
-              borderLeftWidth: 1,
-              borderBottomWidth: 1,
-              borderRightWidth: 1,
-              borderColor: "gray",
-              backgroundColor: "white",
-              paddingHorizontal: 10,
-              borderTopLeftRadius: 5,
-              borderTopRightRadius: 5,
-              borderBottomLeftRadius: 5,
-              borderBottomRightRadius: 5,
-            }}
+            style={styles.sendInput}
           />
         </View>
         <View style={{ flex: 0.5 }}>
@@ -183,6 +199,7 @@ const MessageDetails = () => {
               marginRight: 10,
               height: 40,
             }}
+            onPress={onSend}
             icon={
               <Icon name="send" type="font-awesome" size={20} color="white" />
             }

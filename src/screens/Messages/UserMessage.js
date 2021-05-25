@@ -30,8 +30,8 @@ const UserMessage = ({ message, userInfo, sent, withAvatar }) => {
       <View
         style={[
           {
-            borderTopLeftRadius: 10,
-            borderTopRightRadius: 10,
+            borderTopLeftRadius: sent ? 10 : 0,
+            borderTopRightRadius: !sent ? 10 : 0,
             borderBottomLeftRadius: 10,
             borderBottomRightRadius: 10,
             padding: 10,
