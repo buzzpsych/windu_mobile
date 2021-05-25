@@ -30,7 +30,7 @@ const MessageDetails = () => {
   const [markRead] = useMutation(MARK_AS_READ);
   const [sendMessage] = useMutation(SEND_MESSAGE);
 
-  const [getMessages, { data, loading, refetch }] = useLazyQuery(GET_MESSAGES, {
+  const [getMessages, { loading }] = useLazyQuery(GET_MESSAGES, {
     fetchPolicy: "cache-and-network",
     notifyOnNetworkStatusChange: true,
     onCompleted: ({ getMessages }) => {
@@ -109,7 +109,7 @@ const MessageDetails = () => {
 
     const hasUnreadMessages = _.filter(
       userMessages.messages,
-      (message) => message.unread === true && message.to === user.email
+      (message) => message.unread === true && message.to === userSession.email
     );
 
     if (userMessages && _.size(hasUnreadMessages) > 0) {

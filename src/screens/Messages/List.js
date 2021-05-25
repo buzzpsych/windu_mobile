@@ -8,10 +8,11 @@ import {
 import { truncate } from "lodash";
 import { useRecoilState } from "recoil";
 import { ListItem, Avatar, SearchBar, Badge } from "react-native-elements";
-import { useQuery } from "@apollo/client";
+import { useQuery, useSubscription } from "@apollo/client";
 import moment from "moment";
 import { usersList } from "../../recoil/atoms/user";
 import { userSelectedState } from "../../recoil/atoms/message";
+import { NEW_MESSAGE } from "../../graphql/subscriptions/newMessage";
 import { GET_OTHER_USERS_MESSAGES } from "../../graphql/queries/messages/getOtherUsersMessages";
 
 const MessagesList = ({ navigation }) => {
@@ -26,6 +27,8 @@ const MessagesList = ({ navigation }) => {
       setUsers(getOtherUsersMessages);
     },
   });
+
+  const { data: messageData } = useSubscription(NEW_MESSAGE);
 
   const keyExtractor = (_, index) => index.toString();
 

@@ -1,12 +1,14 @@
 import React, { useEffect } from "react";
 import { StyleSheet, Image, Text, ActivityIndicator } from "react-native";
 import "react-native-gesture-handler";
+import { useSubscription } from "@apollo/client";
 import { NavigationContainer } from "@react-navigation/native";
 import { createStackNavigator } from "@react-navigation/stack";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { SafeAreaProvider } from "react-native-safe-area-context";
-import { useRecoilState } from "recoil";
+import { useRecoilState, useRecoilValue } from "recoil";
 import { userState } from "./src/recoil/atoms/user";
+import { userMessages, userSelectedState } from "./src/recoil/atoms/message";
 import OnBoard from "./src/screens/Onboard";
 import ActivityActions from "./src/screens/ActivityActions";
 import Messages from "./src/screens/Messages";
@@ -18,6 +20,7 @@ import { navigationRef } from "./src/common/rootNavigation";
 import User from "./src/screens/User";
 import { readData } from "./src/store/utils";
 import { TimerProvider } from "./src/contexts/timer-context";
+import { NEW_MESSAGE } from "./src/graphql/subscriptions/newMessage";
 
 const styles = StyleSheet.create({
   tabBar: {
@@ -56,8 +59,13 @@ const App = () => {
   const [user, setUser] = useRecoilState(userState);
   const [navState, setNavState] = React.useState(null);
   const [loadingUser, setLoadingUser] = React.useState(true);
+  const [messages, setMessages] = useRecoilState(userMessages);
+  const userSelected = useRecoilValue(userSelectedState);
   const Stack = createStackNavigator();
   const Tab = createBottomTabNavigator();
+
+  const { data: messageData, error: messageError } =
+    useSubscription(NEW_MESSAGE); // for future we can make this a context message provider
 
   useEffect(() => {
     (async () => {
@@ -66,6 +74,44 @@ const App = () => {
       setLoadingUser(false);
     })();
   }, []);
+
+  const addNewMessage = () => {
+    const { newMessage } = messageData;
+    const otherUser =
+      user.email === newMessage.to ? newMessage.from : newMessage.to;
+
+    const messagesCopy = [...messages];
+    const userIndex = messages.findIndex((u) => u.email === otherUser);
+
+    const isUserSelected = newMessage.from === userSelected.email;
+
+    /*     if (isHidden) audio.play();
+    if (isUserSelected) {
+      markRead({
+        variables: { from: userSelected.email, messageId: newMessage._id },
+      }); // updating messages status in server if user is selected
+    } else {
+      increaseCounter();
+    } */
+
+    if (userIndex >= 0) {
+      let newUser = {
+        ...messagesCopy[userIndex],
+        messages: messagesCopy[userIndex]?.messages
+          ? [newMessage, ...messagesCopy[userIndex].messages]
+          : null,
+      };
+
+      messagesCopy[userIndex] = newUser;
+
+      setMessages(messagesCopy);
+    }
+  };
+
+  useEffect(() => {
+    if (messageError) console.warn(messageError);
+    if (messageData) addNewMessage();
+  }, [messageError, messageData]);
 
   if (loadingUser) return <ActivityIndicator size="large" color="#F5A623" />;
 
