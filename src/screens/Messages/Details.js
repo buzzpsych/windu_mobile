@@ -2,10 +2,11 @@ import React from "react";
 import {
   View,
   FlatList,
-  Dimensions,
   TextInput,
   ActivityIndicator,
   TouchableOpacity,
+  Keyboard,
+  PanResponder,
 } from "react-native";
 import { useLazyQuery, useMutation } from "@apollo/client";
 import { Icon } from "react-native-elements";
@@ -27,6 +28,9 @@ const MessageDetails = () => {
   const userSelected = useRecoilValue(userSelectedState);
   const userSession = useRecoilValue(userState);
   const [messages, setMessages] = useRecoilState(userMessages);
+
+  const keyboardPosY = React.useRef(0);
+  const isVisibleKeyboard = React.useRef(false);
 
   const [markRead] = useMutation(MARK_AS_READ);
   const [sendMessage] = useMutation(SEND_MESSAGE);
@@ -150,6 +154,35 @@ const MessageDetails = () => {
     if (!_.isEmpty(userSelected)) getUserMessages();
   }, [userSelected]);
 
+  React.useEffect(() => {
+    const keyboardDidShowListener = Keyboard.addListener(
+      "keyboardDidShow",
+      (ev) => {
+        keyboardPosY.current = ev.endCoordinates.screenY;
+        isVisibleKeyboard.current = true;
+      }
+    );
+    const keyboardDidHideListener = Keyboard.addListener(
+      "keyboardDidHide",
+      () => {
+        isVisibleKeyboard.current = false;
+      }
+    );
+
+    return () => {
+      keyboardDidShowListener.remove();
+      keyboardDidHideListener.remove();
+    };
+  }, []);
+
+  const panResponder = React.useMemo(
+    () =>
+      PanResponder.create({
+        onStartShouldSetPanResponder: () => true,
+      }),
+    []
+  );
+
   const keyExtractor = (item) => item._id;
 
   const getMessagesUserSelected = _.find(
@@ -167,24 +200,20 @@ const MessageDetails = () => {
 
   return (
     <View style={{ flex: 1 }}>
-      <View
-        style={{
-          height: Dimensions.get("window").height - 180,
-        }}
-      >
-        <FlatList
-          inverted={true}
-          data={getMessagesUserSelected?.messages || []}
-          keyExtractor={keyExtractor}
-          renderItem={renderItem}
-          initialNumToRender={_.size(getMessagesUserSelected?.messages)}
-          onEndReached={() => loadMore()}
-          onEndReachedThreshold={0.7}
-          ListFooterComponent={() => (
-            <>{loading && <ActivityIndicator size="large" color="#F5A623" />}</>
-          )}
-        />
-      </View>
+      <FlatList
+        inverted={true}
+        data={getMessagesUserSelected?.messages || []}
+        keyExtractor={keyExtractor}
+        renderItem={renderItem}
+        initialNumToRender={_.size(getMessagesUserSelected?.messages)}
+        onEndReached={() => loadMore()}
+        onEndReachedThreshold={0.7}
+        ListFooterComponent={() => (
+          <>{loading && <ActivityIndicator size="large" color="#F5A623" />}</>
+        )}
+        {...panResponder.panHandlers}
+      />
+
       <View style={styles.accessoryContainer}>
         <TextInput
           multiline
