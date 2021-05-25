@@ -5,9 +5,10 @@ import {
   Dimensions,
   TextInput,
   ActivityIndicator,
+  TouchableOpacity,
 } from "react-native";
 import { useLazyQuery, useMutation } from "@apollo/client";
-import { Icon, Button } from "react-native-elements";
+import { Icon } from "react-native-elements";
 import _ from "lodash";
 import { useRecoilValue, useRecoilState } from "recoil";
 import { userSelectedState, userMessages } from "../../recoil/atoms/message";
@@ -119,6 +120,32 @@ const MessageDetails = () => {
     }
   };
 
+  const loadMore = () => {
+    let messagesCopy = _.cloneDeep(messages);
+    const index = _.findIndex(
+      messagesCopy,
+      (message) => message.email === userSelected.email
+    );
+
+    if (index >= 0) {
+      messagesCopy[index] = {
+        ...messagesCopy[index],
+        page: messagesCopy[index].page + 1,
+      };
+
+      if (!loading) {
+        getMessages({
+          variables: {
+            from: userSelected.email,
+            limit: messagesCopy[index].limit,
+            page: messagesCopy[index].page,
+          },
+        });
+        setMessages(messagesCopy);
+      }
+    }
+  };
+
   React.useEffect(() => {
     if (!_.isEmpty(userSelected)) getUserMessages();
   }, [userSelected]);
@@ -130,21 +157,12 @@ const MessageDetails = () => {
     (message) => message.email === userSelected.email
   );
 
-  const renderItem = ({ item, index }) => {
+  const renderItem = ({ item }) => {
     const sent = item.from === userSession.email;
     const userInfo =
       item.from === userSession.email ? userSession : userSelected;
-    const withAvatar =
-      item.from !== getMessagesUserSelected?.messages[index + 1]?.from;
 
-    return (
-      <UserMessage
-        message={item}
-        userInfo={userInfo}
-        sent={sent}
-        withAvatar={withAvatar}
-      />
-    );
+    return <UserMessage message={item} userInfo={userInfo} sent={sent} />;
   };
 
   return (
@@ -154,59 +172,38 @@ const MessageDetails = () => {
           height: Dimensions.get("window").height - 180,
         }}
       >
-        {loading ? (
-          <View
-            style={{
-              flex: 0.9,
-              flexDirection: "column",
-              justifyContent: "center",
-              alignItems: "center",
-            }}
-          >
-            <ActivityIndicator size="large" color="#F5A623" />
-          </View>
-        ) : (
-          <FlatList
-            inverted={true}
-            data={getMessagesUserSelected?.messages}
-            keyExtractor={keyExtractor}
-            renderItem={renderItem}
-            initialNumToRender={_.size(getMessagesUserSelected?.messages)}
-          />
-        )}
+        <FlatList
+          inverted={true}
+          data={getMessagesUserSelected?.messages || []}
+          keyExtractor={keyExtractor}
+          renderItem={renderItem}
+          initialNumToRender={_.size(getMessagesUserSelected?.messages)}
+          onEndReached={() => loadMore()}
+          onEndReachedThreshold={0.7}
+          ListFooterComponent={() => (
+            <>{loading && <ActivityIndicator size="large" color="#F5A623" />}</>
+          )}
+        />
       </View>
-      <View
-        style={{
-          flexDirection: "row",
-          alignItems: "center",
-          justifyContent: "space-around",
-        }}
-      >
-        <View style={{ flex: 2.5 }}>
-          <TextInput
-            placeholder="Send a message"
-            onChangeText={(value) => setNewMessage(value)}
-            value={newMessage}
-            style={styles.sendInput}
-          />
-        </View>
-        <View style={{ flex: 0.5 }}>
-          <Button
-            buttonStyle={{
-              justifyContent: "center",
-              alignItems: "center",
-              backgroundColor: "#F5A623",
-              marginRight: 10,
-              height: 40,
-            }}
-            onPress={onSend}
-            icon={
-              <Icon name="send" type="font-awesome" size={20} color="white" />
-            }
-          />
-        </View>
+      <View style={styles.accessoryContainer}>
+        <TextInput
+          multiline
+          onChangeText={(text) => setNewMessage(text)}
+          value={newMessage}
+          placeholder={"Message"}
+          placeholderTextColor={"#9D9FA3"}
+          style={styles.input}
+        />
+        <TouchableOpacity
+          onPress={() => onSend()}
+          style={[styles.buttonSend, { opacity: newMessage ? 1 : 0.5 }]}
+          disabled={!newMessage}
+        >
+          <Icon name="send" type="font-awesome" size={20} color="white" />
+        </TouchableOpacity>
       </View>
     </View>
   );
 };
+
 export default MessageDetails;

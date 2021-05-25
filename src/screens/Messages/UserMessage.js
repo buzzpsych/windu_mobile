@@ -1,59 +1,55 @@
 import React from "react";
 import { Avatar } from "react-native-elements";
-import { View, Text, Dimensions } from "react-native";
-import { StyleSheet } from "react-native";
+import { View, Text } from "react-native";
+import moment from "moment";
+import styles from "./styles";
 
-const styles = StyleSheet.create({
-  message: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    paddingVertical: 5,
-    paddingHorizontal: 10,
-  },
-});
+export const TIME_FORMAT = "MM/DD/YY HH:mm";
 
-const UserMessage = ({ message, userInfo, sent, withAvatar }) => {
+const UserMessage = ({ message, userInfo, sent }) => {
   const avatarSrc =
     userInfo.avatar ||
     `https://ui-avatars.com/api/?name=${userInfo?.full_name}`;
 
   return (
-    <View style={styles.message}>
-      {withAvatar && !sent && (
-        <Avatar
-          rounded
-          source={{
-            uri: avatarSrc,
-          }}
-        />
+    <View
+      style={[
+        styles.container,
+        { justifyContent: sent ? "flex-end" : "flex-start" },
+      ]}
+    >
+      {!sent && (
+        <View style={styles.memberPicture}>
+          <Avatar
+            rounded
+            source={{
+              uri: avatarSrc,
+            }}
+          />
+        </View>
       )}
-      <View
-        style={[
-          {
-            borderTopLeftRadius: sent ? 10 : 0,
-            borderTopRightRadius: !sent ? 10 : 0,
-            borderBottomLeftRadius: 10,
-            borderBottomRightRadius: 10,
-            padding: 10,
-            justifyContent: "center",
-            marginLeft: !sent && !withAvatar ? 40 : 0,
-            width: Dimensions.get("window").width - 60,
-            backgroundColor: sent ? "#e2e8f0" : "#4e35c2",
-          },
-        ]}
-      >
-        <Text style={{ color: sent ? "black" : "white" }}>
-          {message.content}
-        </Text>
+      <View style={styles.bubbleSize}>
+        <View
+          style={[
+            styles.bubble,
+            { backgroundColor: sent ? "#e2e8f0" : "#4e35c2" },
+          ]}
+        >
+          <View style={{ flexShrink: 1 }}>
+            <Text
+              style={[styles.messageText, { color: sent ? "black" : "white" }]}
+            >
+              {message.content}
+            </Text>
+          </View>
+
+          <View style={styles.bubbleTime}>
+            <Text style={[styles.bubbleTimeText, { color: "#9D9FA3" }]}>
+              {moment(message.created_at).format(TIME_FORMAT)}
+            </Text>
+          </View>
+        </View>
       </View>
-      {withAvatar && sent && (
-        <Avatar
-          rounded
-          source={{
-            uri: avatarSrc,
-          }}
-        />
-      )}
     </View>
   );
 };
