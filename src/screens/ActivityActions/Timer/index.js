@@ -50,7 +50,6 @@ const Timer = () => {
     useLazyQuery(GET_CURRENT_ACTIVITY, {
       fetchPolicy: "cache-and-network",
       onCompleted: ({ getCurrentActivity }) => {
-        console.log(getCurrentActivity)
         if (has(getCurrentActivity, "time.start"))
           setActivity({
             active: true,
