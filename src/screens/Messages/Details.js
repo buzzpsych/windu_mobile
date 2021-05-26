@@ -24,11 +24,11 @@ const limit = 50;
 const page = 0;
 
 const MessageDetails = () => {
+  const [listEnd, setListEnd] = React.useState(false);
   const [newMessage, setNewMessage] = React.useState("");
   const userSelected = useRecoilValue(userSelectedState);
   const userSession = useRecoilValue(userState);
   const [messages, setMessages] = useRecoilState(userMessages);
-
   const keyboardPosY = React.useRef(0);
   const isVisibleKeyboard = React.useRef(false);
 
@@ -37,8 +37,11 @@ const MessageDetails = () => {
 
   const [getMessages, { loading }] = useLazyQuery(GET_MESSAGES, {
     fetchPolicy: "cache-and-network",
-    notifyOnNetworkStatusChange: true,
     onCompleted: ({ getMessages }) => {
+      if (_.size(getMessages) <= 0) {
+        setListEnd(true);
+        return;
+      }
       let messagesCopy = _.cloneDeep(messages);
       const index = _.findIndex(
         messagesCopy,
@@ -125,6 +128,7 @@ const MessageDetails = () => {
   };
 
   const loadMore = () => {
+    if (listEnd) return;
     let messagesCopy = _.cloneDeep(messages);
     const index = _.findIndex(
       messagesCopy,

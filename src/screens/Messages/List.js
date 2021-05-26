@@ -5,19 +5,20 @@ import {
   ActivityIndicator,
   RefreshControl,
 } from "react-native";
-import { truncate } from "lodash";
-import { useRecoilState } from "recoil";
+import { truncate, findIndex, cloneDeep, orderBy } from "lodash";
+import { useRecoilState, useRecoilValue } from "recoil";
 import { ListItem, Avatar, SearchBar, Badge } from "react-native-elements";
 import { useQuery, useSubscription } from "@apollo/client";
 import moment from "moment";
-import { usersList } from "../../recoil/atoms/user";
+import { usersList, userState } from "../../recoil/atoms/user";
 import { userSelectedState } from "../../recoil/atoms/message";
 import { NEW_MESSAGE } from "../../graphql/subscriptions/newMessage";
 import { GET_OTHER_USERS_MESSAGES } from "../../graphql/queries/messages/getOtherUsersMessages";
 
 const MessagesList = ({ navigation }) => {
   const [users, setUsers] = useRecoilState(usersList);
-  const [_, setUserSelected] = useRecoilState(userSelectedState);
+  const [userSelected, setUserSelected] = useRecoilState(userSelectedState);
+  const userSession = useRecoilValue(userState);
   const [search, setSearch] = useState("");
 
   const { loading, refetch } = useQuery(GET_OTHER_USERS_MESSAGES, {
@@ -28,13 +29,54 @@ const MessagesList = ({ navigation }) => {
     },
   });
 
-  const { data: messageData } = useSubscription(NEW_MESSAGE);
+  const { data: messageData, loading: loadingNewMessage } =
+    useSubscription(NEW_MESSAGE);
+
+  const updateList = () => {
+    const {
+      newMessage: { from, to },
+    } = messageData;
+
+    const index = findIndex(
+      users,
+      (user) => user.email === from || user.email === to
+    );
+
+    if (index >= 0) {
+      const arrayCopy = cloneDeep(users);
+
+      const userUpdate = {
+        ...arrayCopy[index],
+        latestMessage: messageData.newMessage,
+        unreadMessages:
+          from === userSession.email || from === userSelected.email
+            ? arrayCopy[index].unreadMessages
+            : arrayCopy[index].unreadMessages + 1,
+      };
+
+      arrayCopy[index] = userUpdate;
+
+      const arraySorted = orderBy(
+        arrayCopy,
+        "latestMessage.created_at",
+        "desc"
+      );
+
+      setUsers(arraySorted);
+    } else {
+      refetch();
+    }
+  };
+
+  React.useEffect(() => {
+    if (messageData && !loadingNewMessage) updateList();
+  }, [messageData]);
 
   const keyExtractor = (_, index) => index.toString();
 
   const handleDetails = (user) => {
     setUserSelected(user);
-    navigation.navigate("Details", { names: ["Brent", "Satya", "Michaś"] });
+    navigation.navigate("Details");
   };
 
   const updateSearch = (search) => {
@@ -57,14 +99,19 @@ const MessagesList = ({ navigation }) => {
         <ListItem.Content>
           <ListItem.Title>{item.full_name}</ListItem.Title>
           <ListItem.Subtitle>
-            {truncate(item.latestMessage.content, { length: 30 })}
+            {truncate(item.latestMessage.content, { length: 50 })}
           </ListItem.Subtitle>
-        </ListItem.Content>
-        <ListItem.Content>
           <ListItem.Subtitle>
             {moment(item.latestMessage.created_at).fromNow()}
           </ListItem.Subtitle>
         </ListItem.Content>
+        {item.unreadMessages > 0 && (
+          <Badge
+            value={item.unreadMessages}
+            badgeStyle={{ backgroundColor: "#F5A623" }}
+          />
+        )}
+        <ListItem.Chevron color="black" />
       </ListItem>
     );
   };
