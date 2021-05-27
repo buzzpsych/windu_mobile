@@ -48,6 +48,7 @@ const TabIcon = ({ isActive, src, node }) => {
 };
 
 export const MainStackScreens = () => {
+  const user = useRecoilValue(userState);
   const userSelected = useRecoilValue(userSelectedState);
   const [messages, setMessages] = useRecoilState(userMessages);
 

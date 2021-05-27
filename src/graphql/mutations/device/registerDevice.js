@@ -7,7 +7,7 @@ export const REGISTER_DEVICE = gql`
 `;
 
 export const UNREGISTER_DEVICE = gql`
-  mutation unregisterDevice($token: ID!) {
+  mutation unregisterDevice($token: String!) {
     unregisterDevice(token: $token)
   }
 `;
