@@ -1,7 +1,9 @@
 import React from "react";
 import { StyleSheet, Image, Text } from "react-native";
+import { Badge } from "react-native-elements";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { useRecoilValue, useRecoilState } from "recoil";
+import _ from "lodash";
 import { useSubscription, useMutation, useApolloClient } from "@apollo/client";
 import { registerPushNotifications } from "../common/registerPushNotification";
 import ActivityActions from "../screens/ActivityActions";
@@ -9,6 +11,7 @@ import Messages from "../screens/Messages";
 import ActiveTimers from "../screens/ActiveTimers";
 import User from "../screens/User";
 import { NEW_MESSAGE } from "../graphql/subscriptions/newMessage";
+import { READ_MESSAGE } from "../graphql/subscriptions/readMessage";
 import { MARK_AS_READ } from "../graphql/mutations/messages/markAsReadMessages";
 import { userState } from "../recoil/atoms/user";
 import { userMessages, userSelectedState } from "../recoil/atoms/message";
@@ -48,14 +51,36 @@ const TabIcon = ({ isActive, src, node }) => {
 };
 
 export const MainStackScreens = () => {
-  const user = useRecoilValue(userState);
+  const [user, setUser] = useRecoilState(userState);
   const userSelected = useRecoilValue(userSelectedState);
   const [messages, setMessages] = useRecoilState(userMessages);
 
   const { data: messageData, error: messageError } =
     useSubscription(NEW_MESSAGE); // for future we can make this a context message provider
 
+  const { data: messageRead, error: messageReadError } =
+    useSubscription(READ_MESSAGE);
+
   const [markRead] = useMutation(MARK_AS_READ);
+
+  const decreaseCounter = () => {
+    const { markReadMessages } = messageRead;
+
+    if (user.unreadMessages > 0)
+      setUser({
+        ...user,
+        unreadMessages: user.unreadMessages - markReadMessages.messagesUpdated,
+      });
+  };
+
+  const increaseCounter = () => {
+    const { newMessage } = messageData;
+    if (
+      (_.isEmpty(userSelected) && newMessage.from !== user.email) ||
+      (userSelected.email !== newMessage.from && newMessage.from !== user.email)
+    )
+      setUser({ ...user, unreadMessages: user.unreadMessages + 1 });
+  };
 
   const addNewMessage = () => {
     const { newMessage } = messageData;
@@ -71,6 +96,8 @@ export const MainStackScreens = () => {
       markRead({
         variables: { from: userSelected.email, messageId: newMessage._id },
       }); // updating messages status in server if user is selected
+    } else {
+      increaseCounter();
     }
 
     if (userIndex >= 0) {
@@ -91,6 +118,11 @@ export const MainStackScreens = () => {
     if (messageError) console.warn(messageError);
     if (messageData) addNewMessage();
   }, [messageError, messageData]);
+
+  React.useEffect(() => {
+    if (messageReadError) console.warn(messageReadError);
+    if (messageRead) decreaseCounter();
+  }, [messageReadError, messageRead]);
 
   return (
     <Tab.Navigator
@@ -141,10 +173,19 @@ export const MainStackScreens = () => {
           tabBarIcon: ({ focused }) => {
             const isActive = focused;
             return (
-              <TabIcon
-                isActive={isActive}
-                src="https://windu.s3.us-east-2.amazonaws.com/assets/mobile/messages_nav.png"
-              />
+              <>
+                <TabIcon
+                  isActive={isActive}
+                  src="https://windu.s3.us-east-2.amazonaws.com/assets/mobile/messages_nav.png"
+                />
+                {user.unreadMessages > 0 && (
+                  <Badge
+                    value={user.unreadMessages}
+                    containerStyle={{ position: "absolute", top: 0, right: 30 }}
+                    badgeStyle={{ backgroundColor: "#F5A623" }}
+                  />
+                )}
+              </>
             );
           },
         }}
