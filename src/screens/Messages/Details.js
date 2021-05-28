@@ -8,13 +8,14 @@ import {
   Keyboard,
   PanResponder,
 } from "react-native";
-import { useLazyQuery, useMutation } from "@apollo/client";
+import { useLazyQuery, useMutation, useSubscription } from "@apollo/client";
 import { Icon } from "react-native-elements";
 import _ from "lodash";
 import { useRecoilValue, useRecoilState } from "recoil";
 import { userSelectedState, userMessages } from "../../recoil/atoms/message";
-import { userState } from "../../recoil/atoms/user";
+import { userState, usersList } from "../../recoil/atoms/user";
 import { SEND_MESSAGE } from "../../graphql/mutations/messages/sendMessage";
+import { READ_MESSAGE } from "../../graphql/subscriptions/readMessage";
 import { GET_MESSAGES } from "../../graphql/queries/messages/getMessages";
 import { MARK_AS_READ } from "../../graphql/mutations/messages/markAsReadMessages";
 import UserMessage from "../Messages/UserMessage";
@@ -25,12 +26,16 @@ const page = 0;
 
 const MessageDetails = () => {
   const [listEnd, setListEnd] = React.useState(false);
+  const [users, setUsers] = useRecoilState(usersList);
   const [newMessage, setNewMessage] = React.useState("");
   const userSelected = useRecoilValue(userSelectedState);
   const userSession = useRecoilValue(userState);
   const [messages, setMessages] = useRecoilState(userMessages);
   const keyboardPosY = React.useRef(0);
   const isVisibleKeyboard = React.useRef(false);
+
+  const { data: messageRead, error: messageReadError } =
+    useSubscription(READ_MESSAGE);
 
   const [markRead] = useMutation(MARK_AS_READ);
   const [sendMessage] = useMutation(SEND_MESSAGE);
@@ -154,9 +159,35 @@ const MessageDetails = () => {
     }
   };
 
+  const updateListCounter = () => {
+    // updating counter in member/client list
+    const { markReadMessages } = messageRead;
+
+    const userIndex = _.findIndex(
+      users,
+      (user) => user.email === markReadMessages.from
+    );
+
+    if (userIndex >= 0) {
+      const usersCopy = _.cloneDeep(users);
+      const currentUnreadMessages = usersCopy[userIndex].unreadMessages;
+      usersCopy[userIndex].unreadMessages =
+        currentUnreadMessages === 0
+          ? currentUnreadMessages
+          : currentUnreadMessages - markReadMessages.messagesUpdated;
+
+      setUsers(usersCopy);
+    }
+  };
+
   React.useEffect(() => {
     if (!_.isEmpty(userSelected)) getUserMessages();
   }, [userSelected]);
+
+  React.useEffect(() => {
+    if (messageReadError) alert(messageReadError);
+    if (messageRead) updateListCounter();
+  }, [messageReadError, messageRead]);
 
   React.useEffect(() => {
     const keyboardDidShowListener = Keyboard.addListener(

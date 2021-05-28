@@ -5,8 +5,9 @@ import {
   ActivityIndicator,
   RefreshControl,
 } from "react-native";
-import { truncate, findIndex, cloneDeep, orderBy } from "lodash";
-import { useRecoilState, useRecoilValue } from "recoil";
+import { truncate, findIndex, cloneDeep, orderBy, isEmpty } from "lodash";
+import { useRecoilState, useRecoilValue, useResetRecoilState } from "recoil";
+import { useIsFocused } from "@react-navigation/native";
 import { ListItem, Avatar, SearchBar, Badge } from "react-native-elements";
 import { useQuery, useSubscription } from "@apollo/client";
 import moment from "moment";
@@ -18,8 +19,11 @@ import { GET_OTHER_USERS_MESSAGES } from "../../graphql/queries/messages/getOthe
 const MessagesList = ({ navigation }) => {
   const [users, setUsers] = useRecoilState(usersList);
   const [userSelected, setUserSelected] = useRecoilState(userSelectedState);
+  const resetUserSelected = useResetRecoilState(userSelectedState); // method to reset recoil state wihtout re-render
   const userSession = useRecoilValue(userState);
   const [search, setSearch] = useState("");
+
+  const isFocused = useIsFocused();
 
   const { loading, refetch } = useQuery(GET_OTHER_USERS_MESSAGES, {
     variables: { search },
@@ -71,6 +75,11 @@ const MessagesList = ({ navigation }) => {
   React.useEffect(() => {
     if (messageData && !loadingNewMessage) updateList();
   }, [messageData]);
+
+  React.useEffect(() => {
+    // if list is focused and select user has value we reset it
+    if (isFocused && !isEmpty(userSelected)) resetUserSelected();
+  }, [isFocused]);
 
   const keyExtractor = (_, index) => index.toString();
 
@@ -125,7 +134,6 @@ const MessagesList = ({ navigation }) => {
         lightTheme={true}
         inputStyle={{ color: "black" }}
       />
-
       {loading ? (
         <View
           style={{
