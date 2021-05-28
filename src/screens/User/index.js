@@ -3,20 +3,23 @@ import { Button } from "react-native-elements";
 import { createStackNavigator } from "@react-navigation/stack";
 import { useMutation } from "@apollo/client";
 import { clearStorage } from "../../store/utils";
-import { useRecoilState } from "recoil";
+import { useResetRecoilState } from "recoil";
 import { LOGOUT } from "../../graphql/mutations/user/logout";
 import { userState } from "../../recoil/atoms/user";
+import { userMessages } from "../../recoil/atoms/message";
 import Settings from "./Settings";
 
 const Stack = createStackNavigator();
 
 const User = () => {
-  const [_, setUser] = useRecoilState(userState);
+  const reserUser = useResetRecoilState(userState);
+  const resetMessages = useResetRecoilState(userMessages);
 
   const [logout] = useMutation(LOGOUT, {
     onCompleted: () => {
       clearStorage().then(() => {
-        setUser(null);
+        reserUser();
+        resetMessages();
       });
     },
   });

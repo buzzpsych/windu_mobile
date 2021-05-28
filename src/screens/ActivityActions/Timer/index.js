@@ -6,7 +6,6 @@ import {
   ActivityIndicator,
   RefreshControl,
   ScrollView,
-  VirtualizedList,
 } from "react-native";
 import { ListItem, Avatar, Text } from "react-native-elements";
 import {
@@ -15,7 +14,7 @@ import {
   useLazyQuery,
   useMutation,
 } from "@apollo/client";
-import { head, has } from "lodash";
+import { head, has, last } from "lodash";
 import moment from "moment";
 import { GET_RECENT_ACTIVITY } from "../../../graphql/queries/activity/getRecentActivity";
 import { GET_CURRENT_ACTIVITY } from "../../../graphql/queries/activity/getCurrentActivity";

@@ -1,152 +1,273 @@
-import React, { useState } from "react";
-import { View, FlatList, Dimensions, Text, ScrollView } from "react-native";
-import { Input } from "react-native-elements";
-
+import React from "react";
+import {
+  View,
+  FlatList,
+  TextInput,
+  ActivityIndicator,
+  TouchableOpacity,
+  Keyboard,
+  PanResponder,
+} from "react-native";
+import { useLazyQuery, useMutation, useSubscription } from "@apollo/client";
+import { Icon } from "react-native-elements";
+import _ from "lodash";
+import { useRecoilValue, useRecoilState } from "recoil";
+import { userSelectedState, userMessages } from "../../recoil/atoms/message";
+import { userState, usersList } from "../../recoil/atoms/user";
+import { SEND_MESSAGE } from "../../graphql/mutations/messages/sendMessage";
+import { READ_MESSAGE } from "../../graphql/subscriptions/readMessage";
+import { GET_MESSAGES } from "../../graphql/queries/messages/getMessages";
+import { MARK_AS_READ } from "../../graphql/mutations/messages/markAsReadMessages";
 import UserMessage from "../Messages/UserMessage";
-import Button from "../../components/Button";
+import styles from "./styles";
+
+const limit = 50;
+const page = 0;
 
 const MessageDetails = () => {
-  const [message, setMessage] = useState("");
-  const signedInUser = "evan@fishyvisions.com";
-  const messages = [
-    {
-      _id: "6075b4821223123193ea022",
-      content: "what do you mean?",
-      created_at: "2021-04-13T16:05:11.284Z",
-      from: "tyler@fishyvisions.com",
-      to: "evan@fishyvisions.com",
-      unread: false,
+  const [listEnd, setListEnd] = React.useState(false);
+  const [users, setUsers] = useRecoilState(usersList);
+  const [newMessage, setNewMessage] = React.useState("");
+  const userSelected = useRecoilValue(userSelectedState);
+  const userSession = useRecoilValue(userState);
+  const [messages, setMessages] = useRecoilState(userMessages);
+  const keyboardPosY = React.useRef(0);
+  const isVisibleKeyboard = React.useRef(false);
+
+  const { data: messageRead, error: messageReadError } =
+    useSubscription(READ_MESSAGE);
+
+  const [markRead] = useMutation(MARK_AS_READ);
+  const [sendMessage] = useMutation(SEND_MESSAGE);
+
+  const [getMessages, { loading }] = useLazyQuery(GET_MESSAGES, {
+    fetchPolicy: "cache-and-network",
+    onCompleted: ({ getMessages }) => {
+      if (_.size(getMessages) <= 0) {
+        setListEnd(true);
+        return;
+      }
+      let messagesCopy = _.cloneDeep(messages);
+      const index = _.findIndex(
+        messagesCopy,
+        (message) => message.email === userSelected.email
+      );
+
+      if (index >= 0) {
+        const gatherMessages = _.unionBy(
+          messagesCopy[index].messages,
+          getMessages,
+          "_id"
+        );
+        const messagesMarked = markAsRead(gatherMessages);
+        messagesCopy[index] = {
+          ...messagesCopy[index],
+          messages: messagesMarked,
+        };
+      } else {
+        const messagesMarked = markAsRead(getMessages);
+        messagesCopy = [
+          ...messagesCopy,
+          {
+            email: userSelected.email,
+            messages: messagesMarked,
+            limit,
+            page,
+          },
+        ];
+      }
+
+      setMessages(messagesCopy);
     },
-    {
-      _id: "6075b48219b0b56d193ea022",
-      content: "Tyler please use windu, you havent used it for wireframing !",
-      created_at: "2021-04-13T15:10:58.561Z",
-      from: "evan@fishyvisions.com",
-      to: "tyler@fishyvisions.com",
-      unread: false,
-    },
-    {
-      content: "soon there will be a large list of active orkers",
-      created_at: "2021-04-02T23:49:27.865Z",
-      from: "evan@fishyvisions.com",
-      to: "tyler@fishyvisions.com",
-      unread: false,
-      _id: "6067ad8786ed4712e3230e5d",
-    },
-    {
-      content: "soon there will be a large list of active orkers",
-      created_at: "2021-04-02T23:49:27.865Z",
-      from: "evan@fishyvisions.com",
-      to: "tyler@fishyvisions.com",
-      unread: false,
-      _id: "6067ad8786ed4712e3230e5d",
-    },
-    {
-      content: "soon there will be a large list of active orkers",
-      created_at: "2021-04-02T23:49:27.865Z",
-      from: "evan@fishyvisions.com",
-      to: "tyler@fishyvisions.com",
-      unread: false,
-      _id: "6067ad8786ed4712e3230e5d",
-    },
-    {
-      content: "soon there will be a large list of active orkers",
-      created_at: "2021-04-02T23:49:27.865Z",
-      from: "evan@fishyvisions.com",
-      to: "tyler@fishyvisions.com",
-      unread: false,
-      _id: "6067ad8786ed4712e3230e5d",
-    },
-    {
-      content: "soon there will be a large list of active orkers",
-      created_at: "2021-04-02T23:49:27.865Z",
-      from: "evan@fishyvisions.com",
-      to: "tyler@fishyvisions.com",
-      unread: false,
-      _id: "6067ad8786ed4712e3230e5d",
-    },
-    {
-      content: "soon there will be a large list of active orkers",
-      created_at: "2021-04-02T23:49:27.865Z",
-      from: "evan@fishyvisions.com",
-      to: "tyler@fishyvisions.com",
-      unread: false,
-      _id: "6067ad8786ed4712e3230e5d",
-    },
-    {
-      _id: "6075b4821223123193ea022",
-      content: "LAST",
-      created_at: "2021-04-13T16:05:11.284Z",
-      from: "tyler@fishyvisions.com",
-      to: "evan@fishyvisions.com",
-      unread: false,
-    },
-  ];
+  });
+
+  const onSend = () => {
+    if (newMessage.trim() === "") return;
+
+    sendMessage({
+      variables: { to: userSelected.email, content: newMessage },
+    });
+    setNewMessage("");
+  };
+
+  const markAsRead = (messages) => {
+    const messagesCopy = _.cloneDeep(messages);
+    const messagesUpdated = _.map(messagesCopy, (message) => {
+      if (message.unread) message.unread = false;
+
+      return message;
+    });
+
+    markRead({ variables: { from: userSelected.email } }); // updating messages status in server
+
+    return messagesUpdated;
+  };
+
+  const getUserMessages = () => {
+    const userMessages = _.find(
+      messages,
+      (message) => message.email === userSelected.email
+    );
+
+    if (!userMessages) {
+      getMessages({
+        variables: {
+          from: userSelected.email,
+          limit,
+          page: userMessages?.page || 0,
+        },
+      });
+      return;
+    }
+
+    const hasUnreadMessages = _.filter(
+      userMessages.messages,
+      (message) => message.unread === true && message.to === userSession.email
+    );
+
+    if (userMessages && _.size(hasUnreadMessages) > 0) {
+      markRead({
+        variables: { from: userSelected.email },
+      }); // updating messages status in server if user is selected
+    }
+  };
+
+  const loadMore = () => {
+    if (listEnd) return;
+    let messagesCopy = _.cloneDeep(messages);
+    const index = _.findIndex(
+      messagesCopy,
+      (message) => message.email === userSelected.email
+    );
+
+    if (index >= 0) {
+      messagesCopy[index] = {
+        ...messagesCopy[index],
+        page: messagesCopy[index].page + 1,
+      };
+
+      if (!loading) {
+        getMessages({
+          variables: {
+            from: userSelected.email,
+            limit: messagesCopy[index].limit,
+            page: messagesCopy[index].page,
+          },
+        });
+        setMessages(messagesCopy);
+      }
+    }
+  };
+
+  const updateListCounter = () => {
+    // updating counter in member/client list
+    const { markReadMessages } = messageRead;
+
+    const userIndex = _.findIndex(
+      users,
+      (user) => user.email === markReadMessages.from
+    );
+
+    if (userIndex >= 0) {
+      const usersCopy = _.cloneDeep(users);
+      const currentUnreadMessages = usersCopy[userIndex].unreadMessages;
+      usersCopy[userIndex].unreadMessages =
+        currentUnreadMessages === 0
+          ? currentUnreadMessages
+          : currentUnreadMessages - markReadMessages.messagesUpdated;
+
+      setUsers(usersCopy);
+    }
+  };
+
+  React.useEffect(() => {
+    if (!_.isEmpty(userSelected)) getUserMessages();
+  }, [userSelected]);
+
+  React.useEffect(() => {
+    if (messageReadError) alert(messageReadError);
+    if (messageRead) updateListCounter();
+  }, [messageReadError, messageRead]);
+
+  React.useEffect(() => {
+    const keyboardDidShowListener = Keyboard.addListener(
+      "keyboardDidShow",
+      (ev) => {
+        keyboardPosY.current = ev.endCoordinates.screenY;
+        isVisibleKeyboard.current = true;
+      }
+    );
+    const keyboardDidHideListener = Keyboard.addListener(
+      "keyboardDidHide",
+      () => {
+        isVisibleKeyboard.current = false;
+      }
+    );
+
+    return () => {
+      keyboardDidShowListener.remove();
+      keyboardDidHideListener.remove();
+    };
+  }, []);
+
+  const panResponder = React.useMemo(
+    () =>
+      PanResponder.create({
+        onStartShouldSetPanResponder: () => true,
+      }),
+    []
+  );
+
+  const keyExtractor = (item) => item._id;
+
+  const getMessagesUserSelected = _.find(
+    messages,
+    (message) => message.email === userSelected.email
+  );
 
   const renderItem = ({ item }) => {
-    const myMessage = signedInUser === item.from;
+    const sent = item.from === userSession.email;
+    const userInfo =
+      item.from === userSession.email ? userSession : userSelected;
 
-    return (
-      <UserMessage
-        align={myMessage ? "right" : "left"}
-        content={item.content}
-      />
-    );
+    return <UserMessage message={item} userInfo={userInfo} sent={sent} />;
   };
-  const keyExtractor = (item, index) => item.id;
 
   return (
-    <>
-      <View
-        style={{
-          paddingTop: 50,
-          height: Dimensions.get("window").height - 200,
-        }}
-      >
-        <FlatList
-          data={messages}
-          keyExtractor={keyExtractor}
-          renderItem={renderItem}
-          initialScrollIndex={messages.length - 1}
+    <View style={{ flex: 1 }}>
+      <FlatList
+        inverted={true}
+        data={getMessagesUserSelected?.messages || []}
+        keyExtractor={keyExtractor}
+        renderItem={renderItem}
+        initialNumToRender={_.size(getMessagesUserSelected?.messages)}
+        onEndReached={() => loadMore()}
+        onEndReachedThreshold={0.7}
+        ListFooterComponent={() => (
+          <>{loading && <ActivityIndicator size="large" color="#F5A623" />}</>
+        )}
+        {...panResponder.panHandlers}
+      />
+
+      <View style={styles.accessoryContainer}>
+        <TextInput
+          multiline
+          onChangeText={(text) => setNewMessage(text)}
+          value={newMessage}
+          placeholder={"Message"}
+          placeholderTextColor={"#9D9FA3"}
+          style={styles.input}
         />
-      </View>
-      <View style={{ padding: 10, flexDirection: "row" }}>
-        <Input
-          containerStyle={{ width: "80%" }}
-          placeholder="Send a message"
-          onChangeText={(value) => setMessage(value)}
-          value={message}
-          inputContainerStyle={{
-            borderTopWidth: 1,
-            borderLeftWidth: 1,
-            borderBottomWidth: 1,
-            borderRightWidth: 1,
-            borderColor: "gray",
-            borderTopLeftRadius: 5,
-            borderTopRightRadius: 5,
-            borderBottomLeftRadius: 5,
-            borderBottomRightRadius: 5,
-          }}
-        />
-        <Button
-          styles={{
-            justifyContent: "center",
-            alignItems: "center",
-            backgroundColor: "#F5A623",
-            marginLeft: "auto",
-            marginRight: "auto",
-            height: 40,
-            padding: 10,
-            borderTopLeftRadius: 5,
-            borderTopRightRadius: 5,
-            borderBottomLeftRadius: 5,
-            borderBottomRightRadius: 5,
-          }}
+        <TouchableOpacity
+          onPress={() => onSend()}
+          style={[styles.buttonSend, { opacity: newMessage ? 1 : 0.5 }]}
+          disabled={!newMessage}
         >
-          <Text>Send</Text>
-        </Button>
+          <Icon name="send" type="font-awesome" size={20} color="white" />
+        </TouchableOpacity>
       </View>
-    </>
+    </View>
   );
 };
+
 export default MessageDetails;

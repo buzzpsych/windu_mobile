@@ -7,7 +7,7 @@ momentDurationFormatSetup(moment);
 const TimerContext = React.createContext();
 
 export function calculateTimeDiff(startTime) {
-  const timeDiff = moment.duration(moment().diff(startTime));
+  const timeDiff = moment.duration(moment(new Date()).diff(startTime));
   const durationFormat = timeDiff.format("HH:mm:ss");
   const timer = utility.intoTimeFormat(durationFormat.length, durationFormat);
 

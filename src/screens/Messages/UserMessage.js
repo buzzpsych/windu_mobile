@@ -1,74 +1,55 @@
 import React from "react";
 import { Avatar } from "react-native-elements";
-import { View, Text, Dimensions } from "react-native";
-import { StyleSheet } from "react-native";
+import { View, Text } from "react-native";
+import moment from "moment";
+import styles from "./styles";
 
-const styles = StyleSheet.create({
-  message: {
-    flexDirection: "row",
-    marginBottom: 15,
-    justifyContent: "space-between",
-    padding: 10,
-  },
-});
+export const TIME_FORMAT = "MM/DD/YY HH:mm";
 
-const UserMessage = ({ style, content, align }) => {
-  if (align === "left") {
-    return (
-      <View style={styles.message}>
-        <Avatar
-          rounded
-          source={{
-            uri:
-              "https://s3.amazonaws.com/uifaces/faces/twitter/ladylexy/128.jpg",
-          }}
-        />
+const UserMessage = ({ message, userInfo, sent }) => {
+  const avatarSrc =
+    userInfo.avatar ||
+    `https://ui-avatars.com/api/?name=${userInfo?.full_name}`;
+
+  return (
+    <View
+      style={[
+        styles.container,
+        { justifyContent: sent ? "flex-end" : "flex-start" },
+      ]}
+    >
+      {!sent && (
+        <View style={styles.memberPicture}>
+          <Avatar
+            rounded
+            source={{
+              uri: avatarSrc,
+            }}
+          />
+        </View>
+      )}
+      <View style={styles.bubbleSize}>
         <View
           style={[
-            style,
-            {
-              borderTopLeftRadius: 10,
-              borderTopRightRadius: 10,
-              borderBottomLeftRadius: 10,
-              borderBottomRightRadius: 10,
-              padding: 10,
-              justifyContent: "center",
-              width: Dimensions.get("window").width - 80,
-              backgroundColor: "#4e35c2",
-            },
+            styles.bubble,
+            { backgroundColor: sent ? "#e2e8f0" : "#4e35c2" },
           ]}
         >
-          <Text style={{ color: "white" }}>{content}</Text>
+          <View style={{ flexShrink: 1 }}>
+            <Text
+              style={[styles.messageText, { color: sent ? "black" : "white" }]}
+            >
+              {message.content}
+            </Text>
+          </View>
+
+          <View style={styles.bubbleTime}>
+            <Text style={[styles.bubbleTimeText, { color: "#9D9FA3" }]}>
+              {moment(message.created_at).format(TIME_FORMAT)}
+            </Text>
+          </View>
         </View>
       </View>
-    );
-  }
-  return (
-    <View style={styles.message}>
-      <View
-        style={[
-          style,
-          {
-            borderTopLeftRadius: 10,
-            borderTopRightRadius: 10,
-            borderBottomLeftRadius: 10,
-            borderBottomRightRadius: 10,
-            padding: 10,
-            justifyContent: "center",
-            width: Dimensions.get("window").width - 80,
-            backgroundColor: "#e2e8f0",
-          },
-        ]}
-      >
-        <Text style={{ color: "black" }}>{content}</Text>
-      </View>
-      <Avatar
-        rounded
-        source={{
-          uri:
-            "https://s3.amazonaws.com/uifaces/faces/twitter/ladylexy/128.jpg",
-        }}
-      />
     </View>
   );
 };
