@@ -14,6 +14,7 @@ import { NEW_MESSAGE } from "../graphql/subscriptions/newMessage";
 import { READ_MESSAGE } from "../graphql/subscriptions/readMessage";
 import { MARK_AS_READ } from "../graphql/mutations/messages/markAsReadMessages";
 import { userState } from "../recoil/atoms/user";
+import { activeTimersState } from "../recoil/atoms/activity";
 import { userMessages, userSelectedState } from "../recoil/atoms/message";
 
 const Tab = createBottomTabNavigator();
@@ -53,6 +54,7 @@ const TabIcon = ({ isActive, src, node }) => {
 export const MainStackScreens = () => {
   const [user, setUser] = useRecoilState(userState);
   const userSelected = useRecoilValue(userSelectedState);
+  const activeTimers = useRecoilValue(activeTimersState);
   const [messages, setMessages] = useRecoilState(userMessages);
 
   const { data: messageData, error: messageError } =
@@ -156,11 +158,21 @@ export const MainStackScreens = () => {
           tabBarLabel: "Timers",
           tabBarIcon: ({ focused }) => {
             const isActive = focused;
+            const nroTimers = _.size(activeTimers);
             return (
-              <TabIcon
-                isActive={isActive}
-                src="https://windu.s3.us-east-2.amazonaws.com/assets/mobile/timers_nav.png"
-              />
+              <>
+                <TabIcon
+                  isActive={isActive}
+                  src="https://windu.s3.us-east-2.amazonaws.com/assets/mobile/timers_nav.png"
+                />
+                {nroTimers > 0 && (
+                  <Badge
+                    value={nroTimers}
+                    containerStyle={{ position: "absolute", top: 0, right: 30 }}
+                    badgeStyle={{ backgroundColor: "#F5A623" }}
+                  />
+                )}
+              </>
             );
           },
         }}

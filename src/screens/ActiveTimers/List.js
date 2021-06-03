@@ -1,20 +1,20 @@
 import React from "react";
-import { View, Text, ScrollView, RefreshControl } from "react-native";
+import { View, RefreshControl, FlatList } from "react-native";
+import { Text } from "react-native-elements";
 import { useLazyQuery, useSubscription } from "@apollo/client";
-import { ListItem } from "react-native-elements";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { ExpandableListView } from "react-native-expandable-listview";
-import { map, filter } from "lodash";
-import { useRecoilValue } from "recoil";
+import { filter, size } from "lodash";
+import { useRecoilValue, useRecoilState } from "recoil";
 import { GET_ACTIVE_TIMERS } from "../../graphql/queries/activity/getActiveTimers";
 import { START_ACTIVITY } from "../../graphql/subscriptions/startActivity";
 import { STOP_ACTIVITY } from "../../graphql/subscriptions/stopActivity";
 import { userState } from "../../recoil/atoms/user";
+import { activeTimersState } from "../../recoil/atoms/activity";
 import AvatarTimer from "./AvatarTimer";
 
 const List = () => {
   const user = useRecoilValue(userState);
-  const [activeTimers, setActiveTimers] = React.useState([]);
+  const [activeTimers, setActiveTimers] = useRecoilState(activeTimersState);
   const insets = useSafeAreaInsets();
 
   const [getActiveTimers, { loading, refetch }] = useLazyQuery(
@@ -63,49 +63,33 @@ const List = () => {
     if (stopActivityData) removeActiveMember();
   }, [stopActivityError, stopActivityData]);
 
-  const renderItem = (timer) => {
-    return {
-      id: timer.created_by._id, // required, id of item
-      customItem: <AvatarTimer timer={timer} />,
-      subCategory: [
-        // required, array containing inner objects
-        {
-          customInnerItem: (
-            <ListItem style={{ width: "100%" }}>
-              <ListItem.Content>
-                <ListItem.Title>{timer.title}</ListItem.Title>
-                <ListItem.Subtitle>{timer.description}</ListItem.Subtitle>
-              </ListItem.Content>
-              <Text style={{ color: "#62C376" }}>{timer.project.title}</Text>
-            </ListItem>
-          ),
-          id: timer._id, // required, of inner object
-        },
-      ],
-    };
-  };
+  const keyExtractor = (item) => item._id;
 
   return (
     <View style={{ top: insets.top, backgroundColor: "#F0F2F5", flex: 1 }}>
-      <ScrollView
-        refreshControl={
-          <RefreshControl onRefresh={() => refetch()} refreshing={loading} />
-        }
-      >
-        <ExpandableListView
-          data={map(activeTimers, (timer) => renderItem(timer))} // required
-          ExpandableListViewStyles={{}}
-          itemContainerStyle={{ padding: 0 }}
-          itemLabelStyle={{}}
-          renderItemSeparator={true}
-          renderInnerItemSeparator={true}
-          innerItemContainerStyle={{
-            borderBottomWidth: 0.3,
-            paddingHorizontal: 20,
-            backgroundColor: "white",
+      {size(activeTimers) <= 0 && !loading ? (
+        <View
+          style={{
+            flex: 1,
+            justifyContent: "center",
+            alignContent: "center",
           }}
+        >
+          <Text h4 style={{ textAlign: "center", color: "#989898" }}>
+            No active timers
+          </Text>
+        </View>
+      ) : (
+        <FlatList
+          nestedScrollEnabled={true}
+          keyExtractor={keyExtractor}
+          data={activeTimers}
+          renderItem={({ item }) => <AvatarTimer timer={item} />}
+          renderScrollComponent={() => (
+            <RefreshControl onRefresh={refetch} refreshing={loading} />
+          )}
         />
-      </ScrollView>
+      )}
     </View>
   );
 };

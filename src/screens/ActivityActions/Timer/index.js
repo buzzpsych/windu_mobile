@@ -128,7 +128,7 @@ const Timer = () => {
       variables: {
         input: {
           activity_id: currentActivity._id,
-          date_end: moment.utc(),
+          date_end: moment.utc(new Date()),
         },
       },
     });
@@ -136,7 +136,7 @@ const Timer = () => {
 
   const handlePause = () => {
     pauseActivity({
-      variables: { id: currentActivity._id, time: moment.utc() },
+      variables: { id: currentActivity._id, time: moment.utc(new Date()) },
     });
   };
 
