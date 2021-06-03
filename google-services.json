@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "302105212525",
+    "project_id": "windu-3e7dc",
+    "storage_bucket": "windu-3e7dc.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:302105212525:android:7ee0850bb001373ae8b164",
+        "android_client_info": {
+          "package_name": "com.fishyvisions.windu"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "302105212525-c3ru8cmg9djbnph7dvh3shnppcg5d7lf.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA2h8-cqutJoJbDaZmx9TMQnRYvWFUdqB8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "302105212525-c3ru8cmg9djbnph7dvh3shnppcg5d7lf.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
