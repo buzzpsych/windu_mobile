@@ -34,8 +34,10 @@ const ActiveActivityAction = ({ onpress, activityTitle }) => {
           />
         </View>
         <View style={{ marginLeft: 10 }}>
-          <Text>{activityTitle}</Text>
-          <Text style={{ fontWeight: "bold" }}>{time}</Text>
+          <Text style={{ fontWeight: "bold", color: "white" }}>
+            {activityTitle}
+          </Text>
+          <Text style={{ fontWeight: "bold", color: "white" }}>{time}</Text>
         </View>
       </View>
     </Pressable>
