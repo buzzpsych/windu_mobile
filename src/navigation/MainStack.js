@@ -89,7 +89,7 @@ export const MainStackScreens = () => {
     const otherUser =
       user.email === newMessage.to ? newMessage.from : newMessage.to;
 
-    const messagesCopy = [...messages];
+    const messagesCopy = _.cloneDeep(messages);
     const userIndex = messages.findIndex((u) => u.email === otherUser);
 
     const isUserSelected = newMessage.from === userSelected.email;
@@ -98,16 +98,17 @@ export const MainStackScreens = () => {
       markRead({
         variables: { from: userSelected.email, messageId: newMessage._id },
       }); // updating messages status in server if user is selected
-    } else {
-      increaseCounter();
     }
+
+    if (!isUserSelected) increaseCounter();
 
     if (userIndex >= 0) {
       let newUser = {
         ...messagesCopy[userIndex],
-        messages: messagesCopy[userIndex]?.messages
-          ? [newMessage, ...messagesCopy[userIndex].messages]
-          : null,
+        messages: messagesCopy[userIndex]?.messages && [
+          newMessage,
+          ...messagesCopy[userIndex].messages,
+        ],
       };
 
       messagesCopy[userIndex] = newUser;

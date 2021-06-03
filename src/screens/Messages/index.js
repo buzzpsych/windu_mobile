@@ -21,7 +21,13 @@ const Messages = () => {
         component={MessageDetails}
         options={{
           headerTitle: () => (
-            <View style={{ flexDirection: "row", alignItems: "center" }}>
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                marginLeft: -10,
+              }}
+            >
               <Avatar
                 rounded
                 source={{

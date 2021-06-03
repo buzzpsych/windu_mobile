@@ -1,24 +1,26 @@
 import React from "react";
 import { ActivityIndicator, View } from "react-native";
 import { NavigationContainer } from "@react-navigation/native";
+import { useLazyQuery } from "@apollo/client";
 import { WrapperMainStack } from "./MainStack";
 import { AuthStackScreens } from "./AuthStack";
 import { useRecoilState } from "recoil";
 import { navigationRef } from "../common/rootNavigation";
+import { GET_USER } from "../graphql/queries/user/getUser";
 import { userState } from "../recoil/atoms/user";
-import { readData } from "../store/utils";
 
 export const Routes = ({ setNavState }) => {
-  const [loading, setLoading] = React.useState(true);
   const [user, setUser] = useRecoilState(userState);
 
+  const [getUser, { loading }] = useLazyQuery(GET_USER, {
+    fetchPolicy: "cache-and-network",
+    onCompleted: ({ getUser }) => {
+      setUser(getUser);
+    },
+  });
+
   React.useEffect(() => {
-    (async () => {
-      const user = await readData("@user");
-      const userObj = JSON.parse(user);
-      setUser(userObj);
-      setLoading(false);
-    })();
+    getUser();
   }, []);
 
   if (loading) {
@@ -43,7 +45,7 @@ export const Routes = ({ setNavState }) => {
       ref={navigationRef}
       onReady={() => setNavState(navigationRef.current.getCurrentRoute().name)}
     >
-      {user ? <WrapperMainStack /> : <AuthStackScreens />}
+      {user || !loading ? <WrapperMainStack /> : <AuthStackScreens />}
     </NavigationContainer>
   );
 };

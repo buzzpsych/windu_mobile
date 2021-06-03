@@ -11,12 +11,12 @@ import { LOGIN } from "../../graphql/mutations/user/login";
 import * as Google from "expo-google-app-auth"; //google auth libraries
 import * as Localization from "expo-localization";
 import { saveData } from "../../store/utils";
-import { useRecoilState } from "recoil";
+import { useSetRecoilState } from "recoil";
 import { userState } from "../../recoil/atoms/user";
 import styles from "./styles";
 
 const OnBoard = () => {
-  const [_, setUser] = useRecoilState(userState);
+  const setUser = useSetRecoilState(userState);
   const windowHeight = Dimensions.get("window").height;
   const modalizeRef = React.useRef();
 
@@ -28,7 +28,6 @@ const OnBoard = () => {
     onCompleted: ({ googleLogin }) => {
       const { token, user } = googleLogin;
       saveData("@token", token);
-      saveData("@user", JSON.stringify(user));
       setUser(user);
     },
   });
@@ -37,10 +36,9 @@ const OnBoard = () => {
     onError: (error) => alert(error),
     onCompleted: ({ login }) => {
       const { token, user } = login;
-      saveData("@token", token);
-      saveData("@user", JSON.stringify(user));
-      setUser(user);
       onClose();
+      saveData("@token", token);
+      setUser(user);
     },
   });
 

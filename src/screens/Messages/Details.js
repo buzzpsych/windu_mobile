@@ -3,11 +3,9 @@ import {
   View,
   FlatList,
   TextInput,
-  ActivityIndicator,
   TouchableOpacity,
   PanResponder,
   KeyboardAvoidingView,
-  Platform,
 } from "react-native";
 import { useLazyQuery, useMutation, useSubscription } from "@apollo/client";
 import { Icon } from "react-native-elements";
@@ -198,10 +196,16 @@ const MessageDetails = () => {
 
   const keyExtractor = (item) => item._id;
 
-  const getMessagesUserSelected = _.find(
-    messages,
-    (message) => message.email === userSelected.email
-  );
+  const getUserSelectedMessages = () => {
+    const getMessagesUserSelected = _.find(
+      messages,
+      (message) => message.email === userSelected.email
+    );
+
+    if (getMessagesUserSelected) return getMessagesUserSelected.messages;
+
+    return [];
+  };
 
   const renderItem = ({ item }) => {
     const sent = item.from === userSession.email;
@@ -213,12 +217,13 @@ const MessageDetails = () => {
 
   return (
     <KeyboardAvoidingView
-      behavior={Platform.OS == "ios" ? "padding" : "height"}
+      behavior="padding"
       style={{ flex: 1 }}
+      keyboardVerticalOffset={80}
     >
       <FlatList
         inverted={true}
-        data={getMessagesUserSelected?.messages || []}
+        data={getUserSelectedMessages() || []}
         keyExtractor={keyExtractor}
         renderItem={renderItem}
         onEndReached={() => loadMore()}
