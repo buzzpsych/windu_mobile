@@ -3,12 +3,21 @@ import {
   View,
   FlatList,
   ActivityIndicator,
-  RefreshControl,
+  Dimensions,
+  Text,
 } from "react-native";
 import { truncate, findIndex, cloneDeep, orderBy, isEmpty } from "lodash";
 import { useRecoilState, useRecoilValue, useResetRecoilState } from "recoil";
 import { useIsFocused } from "@react-navigation/native";
-import { ListItem, Avatar, SearchBar, Badge } from "react-native-elements";
+import {
+  ListItem,
+  Avatar,
+  SearchBar,
+  Badge,
+  FAB,
+  Icon,
+} from "react-native-elements";
+import { Modalize } from "react-native-modalize";
 import { useQuery, useSubscription } from "@apollo/client";
 import moment from "moment";
 import { usersList, userState } from "../../recoil/atoms/user";
@@ -22,8 +31,12 @@ const MessagesList = ({ navigation }) => {
   const resetUserSelected = useResetRecoilState(userSelectedState); // method to reset recoil state wihtout re-render
   const userSession = useRecoilValue(userState);
   const [search, setSearch] = useState("");
-
+  const modalizeRef = React.useRef();
   const isFocused = useIsFocused();
+  const windowHeight = Dimensions.get("window").height;
+
+  const onOpen = () => modalizeRef.current?.open();
+  const onClose = () => modalizeRef.current?.close();
 
   const { loading, refetch } = useQuery(GET_OTHER_USERS_MESSAGES, {
     variables: { search },
@@ -88,10 +101,6 @@ const MessagesList = ({ navigation }) => {
     navigation.navigate("Details");
   };
 
-  const updateSearch = (search) => {
-    setSearch(search);
-  };
-
   const renderItem = ({ item }) => {
     const avatarSrc =
       item.avatar || `https://ui-avatars.com/api/?name=${item?.full_name}`;
@@ -101,7 +110,7 @@ const MessagesList = ({ navigation }) => {
         <View>
           <Avatar rounded source={{ uri: avatarSrc }} />
           <Badge
-            status="success"
+            badgeStyle={{ backgroundColor: item.isOnline ? "green" : "gray" }}
             containerStyle={{ position: "absolute", top: -2, right: -2 }}
           />
         </View>
@@ -126,10 +135,10 @@ const MessagesList = ({ navigation }) => {
   };
 
   return (
-    <View style={{ backgroundColor: "#F0F2F5", flex: 1 }}>
+    <View style={{ flex: 1 }}>
       <SearchBar
-        placeholder="Type Here..."
-        onChangeText={updateSearch}
+        placeholder="Search"
+        onChangeText={(search) => setSearch(search)}
         value={search}
         lightTheme={true}
         inputStyle={{ color: "black" }}
@@ -147,14 +156,35 @@ const MessagesList = ({ navigation }) => {
         </View>
       ) : (
         <FlatList
+          nestedScrollEnabled={true}
           keyExtractor={keyExtractor}
           data={users}
           renderItem={renderItem}
-          renderScrollComponent={() => (
-            <RefreshControl onRefresh={refetch} refreshing={loading} />
-          )}
+          refreshing={loading}
+          onRefresh={() => refetch()}
         />
       )}
+      <FAB
+        buttonStyle={{ borderRadius: 100, backgroundColor: "#F5A623" }}
+        placement={"right"}
+        icon={<Icon name="plus" size={20} color="white" type="font-awesome" />}
+        onPress={() => onOpen()}
+      />
+      <Modalize
+        ref={modalizeRef}
+        withHandle={true}
+        modalTopOffset={windowHeight / 3}
+      >
+        <View style={{ flex: 1, backgroundColor: "blue", height: "100%" }}>
+          <SearchBar
+            placeholder="Search"
+            onChangeText={(search) => setSearch(search)}
+            value={search}
+            lightTheme={true}
+            inputStyle={{ color: "black" }}
+          />
+        </View>
+      </Modalize>
     </View>
   );
 };
