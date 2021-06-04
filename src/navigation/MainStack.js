@@ -1,5 +1,5 @@
 import React from "react";
-import { StyleSheet, Image, Text } from "react-native";
+import { StyleSheet, Image, Text, LogBox } from "react-native";
 import { Badge } from "react-native-elements";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { useRecoilValue, useRecoilState } from "recoil";
@@ -56,6 +56,8 @@ export const MainStackScreens = () => {
   const userSelected = useRecoilValue(userSelectedState);
   const activeTimers = useRecoilValue(activeTimersState);
   const [messages, setMessages] = useRecoilState(userMessages);
+
+  LogBox.ignoreLogs(["Setting a timer"]);
 
   const { data: messageData, error: messageError } =
     useSubscription(NEW_MESSAGE); // for future we can make this a context message provider

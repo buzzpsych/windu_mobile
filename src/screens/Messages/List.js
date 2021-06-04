@@ -1,11 +1,5 @@
 import React, { useState } from "react";
-import {
-  View,
-  FlatList,
-  ActivityIndicator,
-  Dimensions,
-  Text,
-} from "react-native";
+import { View, FlatList, ActivityIndicator, Dimensions } from "react-native";
 import { truncate, findIndex, cloneDeep, orderBy, isEmpty } from "lodash";
 import { useRecoilState, useRecoilValue, useResetRecoilState } from "recoil";
 import { useIsFocused } from "@react-navigation/native";
@@ -24,6 +18,7 @@ import { usersList, userState } from "../../recoil/atoms/user";
 import { userSelectedState } from "../../recoil/atoms/message";
 import { NEW_MESSAGE } from "../../graphql/subscriptions/newMessage";
 import { GET_OTHER_USERS_MESSAGES } from "../../graphql/queries/messages/getOtherUsersMessages";
+import { USER_STATUS_CHANGE } from "../../graphql/subscriptions/userStatusChange";
 
 const MessagesList = ({ navigation }) => {
   const [users, setUsers] = useRecoilState(usersList);
@@ -48,6 +43,9 @@ const MessagesList = ({ navigation }) => {
 
   const { data: messageData, loading: loadingNewMessage } =
     useSubscription(NEW_MESSAGE);
+
+  const { data: userStatus, error: userStatusError } =
+    useSubscription(USER_STATUS_CHANGE);
 
   const updateList = () => {
     const {
@@ -85,9 +83,38 @@ const MessagesList = ({ navigation }) => {
     }
   };
 
+  const updateUserStatus = () => {
+    const { userStatusChange } = userStatus;
+
+    const usersCopy = cloneDeep(users);
+
+    const index = findIndex(
+      usersCopy,
+      (user) => user._id === userStatusChange.id
+    );
+
+    if (index >= 0) {
+      usersCopy[index] = {
+        ...usersCopy[index],
+        isOnline: userStatusChange.isOnline,
+      };
+
+      setUsers(usersCopy);
+    }
+  };
+
+  React.useEffect(() => {
+    if (userStatusError) console.warn(userStatusError);
+    if (userStatus) updateUserStatus();
+  }, [userStatusError, userStatus]);
+
   React.useEffect(() => {
     if (messageData && !loadingNewMessage) updateList();
   }, [messageData]);
+
+  React.useEffect(() => {
+    if (!isEmpty(userSelected)) navigation.navigate("Details");
+  }, [userSelected]);
 
   React.useEffect(() => {
     // if list is focused and select user has value we reset it
@@ -96,10 +123,7 @@ const MessagesList = ({ navigation }) => {
 
   const keyExtractor = (_, index) => index.toString();
 
-  const handleDetails = (user) => {
-    setUserSelected(user);
-    navigation.navigate("Details");
-  };
+  const handleDetails = (user) => setUserSelected(user);
 
   const renderItem = ({ item }) => {
     const avatarSrc =

@@ -8,19 +8,33 @@ import { useRecoilState } from "recoil";
 import { navigationRef } from "../common/rootNavigation";
 import { GET_USER } from "../graphql/queries/user/getUser";
 import { userState } from "../recoil/atoms/user";
+import { readData } from "../store/utils";
 
 export const Routes = ({ setNavState }) => {
   const [user, setUser] = useRecoilState(userState);
+  const [loading, setLoading] = React.useState(true);
 
-  const [getUser, { loading }] = useLazyQuery(GET_USER, {
+  const [getUser] = useLazyQuery(GET_USER, {
     fetchPolicy: "cache-and-network",
     onCompleted: ({ getUser }) => {
       setUser(getUser);
+      setLoading(false);
+    },
+    onError: () => {
+      setUser(null);
+      setLoading(false);
     },
   });
 
   React.useEffect(() => {
-    getUser();
+    (async () => {
+      const token = await readData("@token");
+      if (token) getUser();
+      if (!token) {
+        setUser(null);
+        setLoading(false);
+      }
+    })();
   }, []);
 
   if (loading) {
@@ -45,7 +59,7 @@ export const Routes = ({ setNavState }) => {
       ref={navigationRef}
       onReady={() => setNavState(navigationRef.current.getCurrentRoute().name)}
     >
-      {user || !loading ? <WrapperMainStack /> : <AuthStackScreens />}
+      {user ? <WrapperMainStack /> : <AuthStackScreens />}
     </NavigationContainer>
   );
 };

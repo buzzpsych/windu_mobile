@@ -2,7 +2,7 @@ import { atom } from "recoil";
 
 export const userState = atom({
   key: "user",
-  default: false,
+  default: null,
 });
 
 export const usersList = atom({
