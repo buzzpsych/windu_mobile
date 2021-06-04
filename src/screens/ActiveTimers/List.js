@@ -1,5 +1,10 @@
 import React from "react";
-import { View, RefreshControl, FlatList } from "react-native";
+import {
+  View,
+  RefreshControl,
+  FlatList,
+  ActivityIndicator,
+} from "react-native";
 import { Text } from "react-native-elements";
 import { useLazyQuery, useSubscription } from "@apollo/client";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -65,9 +70,23 @@ const List = () => {
 
   const keyExtractor = (item) => item._id;
 
+  if (loading) {
+    return (
+      <View
+        style={{
+          flex: 1,
+          justifyContent: "center",
+          alignItems: "center",
+        }}
+      >
+        <ActivityIndicator size="large" color="#F5A623" />
+      </View>
+    );
+  }
+
   return (
     <View style={{ top: insets.top, backgroundColor: "#F0F2F5", flex: 1 }}>
-      {size(activeTimers) <= 0 && !loading ? (
+      {size(activeTimers) <= 0 ? (
         <View
           style={{
             flex: 1,

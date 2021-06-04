@@ -13,6 +13,10 @@ import * as Localization from "expo-localization";
 import { saveData } from "../../store/utils";
 import { useSetRecoilState } from "recoil";
 import { userState } from "../../recoil/atoms/user";
+import {
+  androidClientId,
+  androidStandaloneAppClientId,
+} from "../../common/constants";
 import styles from "./styles";
 
 const OnBoard = () => {
@@ -45,16 +49,8 @@ const OnBoard = () => {
   const Glogin = async () => {
     try {
       const result = await Google.logInAsync({
-        //return an object with result token and user
-        //    iosClientId: Constants.manifest.extra.IOS_KEY, //From app.json
-        androidClientId:
-          "103455477750-8nj4dngflre6i991alpn3gpufvl9pmb5.apps.googleusercontent.com",
-        androidStandaloneAppClientId:
-          "103455477750-8nj4dngflre6i991alpn3gpufvl9pmb5.apps.googleusercontent.com",
-        iosClientId:
-          "103455477750-9rnro9p60f3c6blo0v7e6jg4i5r1hg9q.apps.googleusercontent.com",
-        iosStandaloneAppClientId:
-          "103455477750-9rnro9p60f3c6blo0v7e6jg4i5r1hg9q.apps.googleusercontent.com",
+        androidClientId,
+        androidStandaloneAppClientId,
       });
       if (result.type === "success") {
         const {

@@ -39,6 +39,10 @@ const links = from([authLink, errorLink, httpLink]);
 
 const wsClient = new SubscriptionClient(graphqlws, {
   reconnect: true,
+  lazy: true,
+  inactivityTimeout: 75000,
+  timeout: 75000,
+  minTimeout: 75000,
   connectionParams: async () => {
     const token = await readData("@token");
     return {
