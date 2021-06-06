@@ -96,9 +96,7 @@ const OnBoard = () => {
         <View style={styles.logoContainer}>
           <Image
             style={styles.logo}
-            source={{
-              uri: winduLogo,
-            }}
+            source={require("../../../assets/login_icon.png")}
             resizeMode="contain"
           />
         </View>
