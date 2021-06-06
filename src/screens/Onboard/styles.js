@@ -25,8 +25,8 @@ export default styles = StyleSheet.create({
     width: "100%",
   },
   logo: {
-    height: 50,
-    width: 50,
+    height: "100%",
+    width: "100%",
   },
   loginText: {
     color: "white",
