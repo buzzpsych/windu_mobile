@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { View, FlatList, ActivityIndicator, Dimensions } from "react-native";
+import { View, FlatList, ActivityIndicator } from "react-native";
 import { truncate, findIndex, cloneDeep, orderBy, isEmpty } from "lodash";
 import { useRecoilState, useRecoilValue, useResetRecoilState } from "recoil";
 import { useIsFocused } from "@react-navigation/native";
@@ -11,7 +11,6 @@ import {
   FAB,
   Icon,
 } from "react-native-elements";
-import { Modalize } from "react-native-modalize";
 import { useQuery, useSubscription } from "@apollo/client";
 import moment from "moment";
 import { usersList, userState } from "../../recoil/atoms/user";
@@ -26,12 +25,8 @@ const MessagesList = ({ navigation }) => {
   const resetUserSelected = useResetRecoilState(userSelectedState); // method to reset recoil state wihtout re-render
   const userSession = useRecoilValue(userState);
   const [search, setSearch] = useState("");
-  const modalizeRef = React.useRef();
-  const isFocused = useIsFocused();
-  const windowHeight = Dimensions.get("window").height;
 
-  const onOpen = () => modalizeRef.current?.open();
-  const onClose = () => modalizeRef.current?.close();
+  const isFocused = useIsFocused();
 
   const { loading, refetch } = useQuery(GET_OTHER_USERS_MESSAGES, {
     variables: { search },
@@ -192,23 +187,8 @@ const MessagesList = ({ navigation }) => {
         buttonStyle={{ borderRadius: 100, backgroundColor: "#F5A623" }}
         placement={"right"}
         icon={<Icon name="plus" size={20} color="white" type="font-awesome" />}
-        onPress={() => onOpen()}
+        onPress={() => navigation.navigate("SearchUser")}
       />
-      <Modalize
-        ref={modalizeRef}
-        withHandle={true}
-        modalTopOffset={windowHeight / 3}
-      >
-        <View style={{ flex: 1, backgroundColor: "blue", height: "100%" }}>
-          <SearchBar
-            placeholder="Search"
-            onChangeText={(search) => setSearch(search)}
-            value={search}
-            lightTheme={true}
-            inputStyle={{ color: "black" }}
-          />
-        </View>
-      </Modalize>
     </View>
   );
 };

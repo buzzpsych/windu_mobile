@@ -5,6 +5,7 @@ import { createStackNavigator } from "@react-navigation/stack";
 import { useRecoilValue } from "recoil";
 import MessagesList from "./List";
 import MessageDetails from "./Details";
+import SearchList from "./SearchList";
 import { userSelectedState } from "../../recoil/atoms/message";
 const Stack = createStackNavigator();
 
@@ -39,6 +40,13 @@ const Messages = () => {
               </Text>
             </View>
           ),
+        }}
+      />
+      <Stack.Screen
+        name="SearchUser"
+        component={SearchList}
+        options={{
+          headerTitle: "Search Users",
         }}
       />
     </Stack.Navigator>
