@@ -1,7 +1,7 @@
 import React from "react";
 import { View, FlatList } from "react-native";
 import { Text } from "react-native-elements";
-import { filter, size, isEmpty } from "lodash";
+import { filter, size, isEmpty, lowerCase } from "lodash";
 import { ListItem, Avatar, SearchBar, Badge } from "react-native-elements";
 import { useQuery } from "@apollo/client";
 import { useRecoilValue, useRecoilState } from "recoil";
@@ -59,7 +59,7 @@ const SearchList = ({ navigation }) => {
     <View style={{ flex: 1 }}>
       <SearchBar
         placeholder="Write at least 3 characters to start searching"
-        onChangeText={(search) => setRelatedUserSearch(search)}
+        onChangeText={(search) => setRelatedUserSearch(lowerCase(search))}
         value={relatedUserSearch}
         lightTheme={true}
         inputStyle={{ color: "black" }}
