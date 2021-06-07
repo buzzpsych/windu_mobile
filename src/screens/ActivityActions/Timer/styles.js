@@ -58,8 +58,6 @@ export default styles = StyleSheet.create({
     width: 20,
   },
   recentContainer: {
-    flex: 1.5,
-    paddingBottom: 40,
-    paddingHorizontal: 20,
+    flex: 2,
   },
 });

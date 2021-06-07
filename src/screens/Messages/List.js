@@ -1,20 +1,23 @@
 import React, { useState } from "react";
-import {
-  View,
-  FlatList,
-  ActivityIndicator,
-  RefreshControl,
-} from "react-native";
+import { View, FlatList, ActivityIndicator } from "react-native";
 import { truncate, findIndex, cloneDeep, orderBy, isEmpty } from "lodash";
 import { useRecoilState, useRecoilValue, useResetRecoilState } from "recoil";
 import { useIsFocused } from "@react-navigation/native";
-import { ListItem, Avatar, SearchBar, Badge } from "react-native-elements";
+import {
+  ListItem,
+  Avatar,
+  SearchBar,
+  Badge,
+  FAB,
+  Icon,
+} from "react-native-elements";
 import { useQuery, useSubscription } from "@apollo/client";
 import moment from "moment";
 import { usersList, userState } from "../../recoil/atoms/user";
 import { userSelectedState } from "../../recoil/atoms/message";
 import { NEW_MESSAGE } from "../../graphql/subscriptions/newMessage";
 import { GET_OTHER_USERS_MESSAGES } from "../../graphql/queries/messages/getOtherUsersMessages";
+import { USER_STATUS_CHANGE } from "../../graphql/subscriptions/userStatusChange";
 
 const MessagesList = ({ navigation }) => {
   const [users, setUsers] = useRecoilState(usersList);
@@ -35,6 +38,9 @@ const MessagesList = ({ navigation }) => {
 
   const { data: messageData, loading: loadingNewMessage } =
     useSubscription(NEW_MESSAGE);
+
+  const { data: userStatus, error: userStatusError } =
+    useSubscription(USER_STATUS_CHANGE);
 
   const updateList = () => {
     const {
@@ -72,9 +78,38 @@ const MessagesList = ({ navigation }) => {
     }
   };
 
+  const updateUserStatus = () => {
+    const { userStatusChange } = userStatus;
+
+    const usersCopy = cloneDeep(users);
+
+    const index = findIndex(
+      usersCopy,
+      (user) => user._id === userStatusChange.id
+    );
+
+    if (index >= 0) {
+      usersCopy[index] = {
+        ...usersCopy[index],
+        isOnline: userStatusChange.isOnline,
+      };
+
+      setUsers(usersCopy);
+    }
+  };
+
+  React.useEffect(() => {
+    if (userStatusError) console.warn(userStatusError);
+    if (userStatus) updateUserStatus();
+  }, [userStatusError, userStatus]);
+
   React.useEffect(() => {
     if (messageData && !loadingNewMessage) updateList();
   }, [messageData]);
+
+  React.useEffect(() => {
+    if (!isEmpty(userSelected)) navigation.navigate("Details");
+  }, [userSelected]);
 
   React.useEffect(() => {
     // if list is focused and select user has value we reset it
@@ -83,14 +118,7 @@ const MessagesList = ({ navigation }) => {
 
   const keyExtractor = (_, index) => index.toString();
 
-  const handleDetails = (user) => {
-    setUserSelected(user);
-    navigation.navigate("Details");
-  };
-
-  const updateSearch = (search) => {
-    setSearch(search);
-  };
+  const handleDetails = (user) => setUserSelected(user);
 
   const renderItem = ({ item }) => {
     const avatarSrc =
@@ -101,7 +129,7 @@ const MessagesList = ({ navigation }) => {
         <View>
           <Avatar rounded source={{ uri: avatarSrc }} />
           <Badge
-            status="success"
+            badgeStyle={{ backgroundColor: item.isOnline ? "green" : "gray" }}
             containerStyle={{ position: "absolute", top: -2, right: -2 }}
           />
         </View>
@@ -126,10 +154,10 @@ const MessagesList = ({ navigation }) => {
   };
 
   return (
-    <View style={{ backgroundColor: "#F0F2F5", flex: 1 }}>
+    <View style={{ flex: 1 }}>
       <SearchBar
-        placeholder="Type Here..."
-        onChangeText={updateSearch}
+        placeholder="Search"
+        onChangeText={(search) => setSearch(search)}
         value={search}
         lightTheme={true}
         inputStyle={{ color: "black" }}
@@ -147,14 +175,20 @@ const MessagesList = ({ navigation }) => {
         </View>
       ) : (
         <FlatList
+          nestedScrollEnabled={true}
           keyExtractor={keyExtractor}
           data={users}
           renderItem={renderItem}
-          renderScrollComponent={() => (
-            <RefreshControl onRefresh={refetch} refreshing={loading} />
-          )}
+          refreshing={loading}
+          onRefresh={() => refetch()}
         />
       )}
+      <FAB
+        buttonStyle={{ borderRadius: 100, backgroundColor: "#F5A623" }}
+        placement={"right"}
+        icon={<Icon name="plus" size={20} color="white" type="font-awesome" />}
+        onPress={() => navigation.navigate("SearchUser")}
+      />
     </View>
   );
 };

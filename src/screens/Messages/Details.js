@@ -3,10 +3,9 @@ import {
   View,
   FlatList,
   TextInput,
-  ActivityIndicator,
   TouchableOpacity,
-  Keyboard,
   PanResponder,
+  KeyboardAvoidingView,
 } from "react-native";
 import { useLazyQuery, useMutation, useSubscription } from "@apollo/client";
 import { Icon } from "react-native-elements";
@@ -31,8 +30,6 @@ const MessageDetails = () => {
   const userSelected = useRecoilValue(userSelectedState);
   const userSession = useRecoilValue(userState);
   const [messages, setMessages] = useRecoilState(userMessages);
-  const keyboardPosY = React.useRef(0);
-  const isVisibleKeyboard = React.useRef(false);
 
   const { data: messageRead, error: messageReadError } =
     useSubscription(READ_MESSAGE);
@@ -40,7 +37,7 @@ const MessageDetails = () => {
   const [markRead] = useMutation(MARK_AS_READ);
   const [sendMessage] = useMutation(SEND_MESSAGE);
 
-  const [getMessages, { loading }] = useLazyQuery(GET_MESSAGES, {
+  const [getMessages, { loading, refetch }] = useLazyQuery(GET_MESSAGES, {
     fetchPolicy: "cache-and-network",
     onCompleted: ({ getMessages }) => {
       if (_.size(getMessages) <= 0) {
@@ -189,27 +186,6 @@ const MessageDetails = () => {
     if (messageRead) updateListCounter();
   }, [messageReadError, messageRead]);
 
-  React.useEffect(() => {
-    const keyboardDidShowListener = Keyboard.addListener(
-      "keyboardDidShow",
-      (ev) => {
-        keyboardPosY.current = ev.endCoordinates.screenY;
-        isVisibleKeyboard.current = true;
-      }
-    );
-    const keyboardDidHideListener = Keyboard.addListener(
-      "keyboardDidHide",
-      () => {
-        isVisibleKeyboard.current = false;
-      }
-    );
-
-    return () => {
-      keyboardDidShowListener.remove();
-      keyboardDidHideListener.remove();
-    };
-  }, []);
-
   const panResponder = React.useMemo(
     () =>
       PanResponder.create({
@@ -220,10 +196,16 @@ const MessageDetails = () => {
 
   const keyExtractor = (item) => item._id;
 
-  const getMessagesUserSelected = _.find(
-    messages,
-    (message) => message.email === userSelected.email
-  );
+  const getUserSelectedMessages = () => {
+    const getMessagesUserSelected = _.find(
+      messages,
+      (message) => message.email === userSelected.email
+    );
+
+    if (getMessagesUserSelected) return getMessagesUserSelected.messages;
+
+    return [];
+  };
 
   const renderItem = ({ item }) => {
     const sent = item.from === userSession.email;
@@ -234,21 +216,22 @@ const MessageDetails = () => {
   };
 
   return (
-    <View style={{ flex: 1 }}>
+    <KeyboardAvoidingView
+      behavior="padding"
+      style={{ flex: 1 }}
+      keyboardVerticalOffset={80}
+    >
       <FlatList
         inverted={true}
-        data={getMessagesUserSelected?.messages || []}
+        data={getUserSelectedMessages() || []}
         keyExtractor={keyExtractor}
         renderItem={renderItem}
-        initialNumToRender={_.size(getMessagesUserSelected?.messages)}
         onEndReached={() => loadMore()}
         onEndReachedThreshold={0.7}
-        ListFooterComponent={() => (
-          <>{loading && <ActivityIndicator size="large" color="#F5A623" />}</>
-        )}
+        refreshing={loading}
+        onRefresh={() => refetch()}
         {...panResponder.panHandlers}
       />
-
       <View style={styles.accessoryContainer}>
         <TextInput
           multiline
@@ -266,7 +249,7 @@ const MessageDetails = () => {
           <Icon name="send" type="font-awesome" size={20} color="white" />
         </TouchableOpacity>
       </View>
-    </View>
+    </KeyboardAvoidingView>
   );
 };
 

@@ -24,3 +24,12 @@ export const winduLogo =
 
 export const loginImg =
   "https://windu.s3.us-east-2.amazonaws.com/assets/mobile/mobile_1.png";
+
+export const androidClientId =
+  "302105212525-huvnsk7njva6bhm93q7bf6h32jvo4epi.apps.googleusercontent.com";
+export const androidStandaloneAppClientId =
+  "302105212525-t6v4rpmgihm7fui74680srn0935o95ho.apps.googleusercontent.com";
+export const iosClientId =
+  "103455477750-9rnro9p60f3c6blo0v7e6jg4i5r1hg9q.apps.googleusercontent.com";
+export const iosStandaloneAppClientId =
+  "103455477750-9rnro9p60f3c6blo0v7e6jg4i5r1hg9q.apps.googleusercontent.com";

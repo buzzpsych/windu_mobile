@@ -20,7 +20,7 @@ const App = () => {
     <SafeAreaProvider>
       <TimerProvider initialTime={"00:00:00"} throttling={1000}>
         <ActivityAction />
-        <CurrentTimer currentRoute={navState} />
+        {/* <CurrentTimer currentRoute={navState} /> */}
         <Routes setNavState={setNavState} />
       </TimerProvider>
     </SafeAreaProvider>

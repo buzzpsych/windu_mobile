@@ -11,6 +11,7 @@ export const AuthStackScreens = () => (
       component={OnBoard}
       options={{
         title: "OnBoard",
+        headerShown: false,
       }}
     />
   </AuthStack.Navigator>

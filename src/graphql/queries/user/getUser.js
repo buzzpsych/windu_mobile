@@ -9,17 +9,7 @@ export const GET_USER = gql`
       full_name
       avatar
       occupation
-      externalLogin
       unreadMessages
-      projects {
-        _id
-        created_at
-        description
-        title
-        members {
-          _id
-        }
-      }
     }
   }
 `;

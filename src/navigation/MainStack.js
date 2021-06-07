@@ -1,5 +1,5 @@
 import React from "react";
-import { StyleSheet, Image, Text } from "react-native";
+import { StyleSheet, Image, Text, LogBox } from "react-native";
 import { Badge } from "react-native-elements";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { useRecoilValue, useRecoilState } from "recoil";
@@ -14,6 +14,7 @@ import { NEW_MESSAGE } from "../graphql/subscriptions/newMessage";
 import { READ_MESSAGE } from "../graphql/subscriptions/readMessage";
 import { MARK_AS_READ } from "../graphql/mutations/messages/markAsReadMessages";
 import { userState } from "../recoil/atoms/user";
+import { activeTimersState } from "../recoil/atoms/activity";
 import { userMessages, userSelectedState } from "../recoil/atoms/message";
 
 const Tab = createBottomTabNavigator();
@@ -53,7 +54,10 @@ const TabIcon = ({ isActive, src, node }) => {
 export const MainStackScreens = () => {
   const [user, setUser] = useRecoilState(userState);
   const userSelected = useRecoilValue(userSelectedState);
+  const activeTimers = useRecoilValue(activeTimersState);
   const [messages, setMessages] = useRecoilState(userMessages);
+
+  LogBox.ignoreLogs(["Setting a timer"]);
 
   const { data: messageData, error: messageError } =
     useSubscription(NEW_MESSAGE); // for future we can make this a context message provider
@@ -87,7 +91,7 @@ export const MainStackScreens = () => {
     const otherUser =
       user.email === newMessage.to ? newMessage.from : newMessage.to;
 
-    const messagesCopy = [...messages];
+    const messagesCopy = _.cloneDeep(messages);
     const userIndex = messages.findIndex((u) => u.email === otherUser);
 
     const isUserSelected = newMessage.from === userSelected.email;
@@ -96,16 +100,17 @@ export const MainStackScreens = () => {
       markRead({
         variables: { from: userSelected.email, messageId: newMessage._id },
       }); // updating messages status in server if user is selected
-    } else {
-      increaseCounter();
     }
+
+    if (!isUserSelected) increaseCounter();
 
     if (userIndex >= 0) {
       let newUser = {
         ...messagesCopy[userIndex],
-        messages: messagesCopy[userIndex]?.messages
-          ? [newMessage, ...messagesCopy[userIndex].messages]
-          : null,
+        messages: messagesCopy[userIndex]?.messages && [
+          newMessage,
+          ...messagesCopy[userIndex].messages,
+        ],
       };
 
       messagesCopy[userIndex] = newUser;
@@ -156,11 +161,21 @@ export const MainStackScreens = () => {
           tabBarLabel: "Timers",
           tabBarIcon: ({ focused }) => {
             const isActive = focused;
+            const nroTimers = _.size(activeTimers);
             return (
-              <TabIcon
-                isActive={isActive}
-                src="https://windu.s3.us-east-2.amazonaws.com/assets/mobile/timers_nav.png"
-              />
+              <>
+                <TabIcon
+                  isActive={isActive}
+                  src="https://windu.s3.us-east-2.amazonaws.com/assets/mobile/timers_nav.png"
+                />
+                {nroTimers > 0 && (
+                  <Badge
+                    value={nroTimers}
+                    containerStyle={{ position: "absolute", top: 0, right: 30 }}
+                    badgeStyle={{ backgroundColor: "#F5A623" }}
+                  />
+                )}
+              </>
             );
           },
         }}

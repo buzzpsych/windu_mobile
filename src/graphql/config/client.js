@@ -38,11 +38,13 @@ const authLink = setContext(async (_, { headers }) => {
 const links = from([authLink, errorLink, httpLink]);
 
 const wsClient = new SubscriptionClient(graphqlws, {
-  lazy: true,
   reconnect: true,
+  lazy: true,
+  inactivityTimeout: 75000,
+  timeout: 75000,
+  minTimeout: 75000,
   connectionParams: async () => {
     const token = await readData("@token");
-
     return {
       Authorization: `Bearer ${token || ""}`,
     };

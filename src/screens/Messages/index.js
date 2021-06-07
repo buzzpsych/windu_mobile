@@ -5,6 +5,7 @@ import { createStackNavigator } from "@react-navigation/stack";
 import { useRecoilValue } from "recoil";
 import MessagesList from "./List";
 import MessageDetails from "./Details";
+import SearchList from "./SearchList";
 import { userSelectedState } from "../../recoil/atoms/message";
 const Stack = createStackNavigator();
 
@@ -21,7 +22,13 @@ const Messages = () => {
         component={MessageDetails}
         options={{
           headerTitle: () => (
-            <View style={{ flexDirection: "row", alignItems: "center" }}>
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                marginLeft: -10,
+              }}
+            >
               <Avatar
                 rounded
                 source={{
@@ -33,6 +40,13 @@ const Messages = () => {
               </Text>
             </View>
           ),
+        }}
+      />
+      <Stack.Screen
+        name="SearchUser"
+        component={SearchList}
+        options={{
+          headerTitle: "Search Users",
         }}
       />
     </Stack.Navigator>

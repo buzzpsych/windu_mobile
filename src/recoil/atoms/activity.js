@@ -12,3 +12,8 @@ export const activeActivityState = atom({
     active: false,
   },
 });
+
+export const activeTimersState = atom({
+  key: "activeTimers",
+  default: [],
+});

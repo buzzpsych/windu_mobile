@@ -11,12 +11,16 @@ import { LOGIN } from "../../graphql/mutations/user/login";
 import * as Google from "expo-google-app-auth"; //google auth libraries
 import * as Localization from "expo-localization";
 import { saveData } from "../../store/utils";
-import { useRecoilState } from "recoil";
+import { useSetRecoilState } from "recoil";
 import { userState } from "../../recoil/atoms/user";
+import {
+  androidClientId,
+  androidStandaloneAppClientId,
+} from "../../common/constants";
 import styles from "./styles";
 
 const OnBoard = () => {
-  const [_, setUser] = useRecoilState(userState);
+  const setUser = useSetRecoilState(userState);
   const windowHeight = Dimensions.get("window").height;
   const modalizeRef = React.useRef();
 
@@ -28,7 +32,6 @@ const OnBoard = () => {
     onCompleted: ({ googleLogin }) => {
       const { token, user } = googleLogin;
       saveData("@token", token);
-      saveData("@user", JSON.stringify(user));
       setUser(user);
     },
   });
@@ -37,26 +40,17 @@ const OnBoard = () => {
     onError: (error) => alert(error),
     onCompleted: ({ login }) => {
       const { token, user } = login;
-      saveData("@token", token);
-      saveData("@user", JSON.stringify(user));
-      setUser(user);
       onClose();
+      saveData("@token", token);
+      setUser(user);
     },
   });
 
   const Glogin = async () => {
     try {
       const result = await Google.logInAsync({
-        //return an object with result token and user
-        //    iosClientId: Constants.manifest.extra.IOS_KEY, //From app.json
-        androidClientId:
-          "103455477750-8nj4dngflre6i991alpn3gpufvl9pmb5.apps.googleusercontent.com",
-        androidStandaloneAppClientId:
-          "103455477750-8nj4dngflre6i991alpn3gpufvl9pmb5.apps.googleusercontent.com",
-        iosClientId:
-          "103455477750-9rnro9p60f3c6blo0v7e6jg4i5r1hg9q.apps.googleusercontent.com",
-        iosStandaloneAppClientId:
-          "103455477750-9rnro9p60f3c6blo0v7e6jg4i5r1hg9q.apps.googleusercontent.com",
+        androidClientId,
+        androidStandaloneAppClientId,
       });
       if (result.type === "success") {
         const {
@@ -102,9 +96,7 @@ const OnBoard = () => {
         <View style={styles.logoContainer}>
           <Image
             style={styles.logo}
-            source={{
-              uri: winduLogo,
-            }}
+            source={require("../../../assets/login_icon.png")}
             resizeMode="contain"
           />
         </View>

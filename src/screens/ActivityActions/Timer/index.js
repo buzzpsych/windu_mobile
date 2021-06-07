@@ -128,7 +128,7 @@ const Timer = () => {
       variables: {
         input: {
           activity_id: currentActivity._id,
-          date_end: moment.utc(),
+          date_end: moment.utc(new Date()),
         },
       },
     });
@@ -136,7 +136,7 @@ const Timer = () => {
 
   const handlePause = () => {
     pauseActivity({
-      variables: { id: currentActivity._id, time: moment.utc() },
+      variables: { id: currentActivity._id, time: moment.utc(new Date()) },
     });
   };
 
@@ -252,7 +252,7 @@ const Timer = () => {
         </View>
       </ScrollView>
       <View style={styles.recentContainer}>
-        <View style={{ width: "100%", marginBottom: 20 }}>
+        <View style={{ width: "100%", marginBottom: 20, marginLeft: 20 }}>
           <Text h4 style={{ color: "#989898" }}>
             Recent Activity
           </Text>
