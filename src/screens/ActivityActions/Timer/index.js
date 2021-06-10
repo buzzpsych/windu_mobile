@@ -24,6 +24,7 @@ import { STOP_ACTIVITY } from "../../../graphql/mutations/activity/stopActivity"
 import { PAUSE_ACTIVITY } from "../../../graphql/mutations/activity/pauseActivity";
 import Button from "../../../components/Button";
 import { useRecoilState, useRecoilValue } from "recoil";
+import { updateContinueActivityList } from "../../../common/cacheUtilities";
 import { playImg, pauseImg, stopImg } from "../../../common/constants";
 import { activeActivityState } from "../../../recoil/atoms/activity";
 import { userState } from "../../../recoil/atoms/user";
@@ -71,6 +72,9 @@ const Timer = () => {
       toast.show(`${pauseActivity.title} paused`, { type: "success" });
     },
     onError: (error) => toast.show(error, { type: "error" }),
+    update: (cache, { data: { pauseActivity } }) => {
+      updateContinueActivityList(cache, pauseActivity, "paused");
+    },
   });
 
   const { data: startActivityData, error: startActivityError } =
