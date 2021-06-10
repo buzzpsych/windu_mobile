@@ -10,6 +10,11 @@ export const graphqlws =
     ? `ws://${REACT_APP_BE}/graphql`
     : `wss://${REACT_APP_BE}/graphql`;
 
+export const api =
+  NODE_ENV === "development"
+    ? `http://${REACT_APP_BE}`
+    : `https://${REACT_APP_BE}`;
+
 export const playImg =
   "https://windu.s3.us-east-2.amazonaws.com/assets/mobile/play_white.png";
 

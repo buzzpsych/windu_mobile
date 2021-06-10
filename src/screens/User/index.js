@@ -27,7 +27,7 @@ const User = () => {
   return (
     <Stack.Navigator>
       <Stack.Screen
-        name="Settings"
+        name="Profile"
         component={Settings}
         options={{
           headerRight: () => (
