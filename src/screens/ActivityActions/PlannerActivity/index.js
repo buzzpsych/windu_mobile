@@ -65,8 +65,7 @@ const PlannerActivity = () => {
         <Image
           style={{ height: 20, width: 20, marginRight: 5 }}
           source={{
-            uri:
-              "https://windu.s3.us-east-2.amazonaws.com/assets/mobile/clock_gray.png",
+            uri: "https://windu.s3.us-east-2.amazonaws.com/assets/mobile/clock_gray.png",
           }}
           resizeMode="contain"
         />
@@ -87,12 +86,12 @@ const PlannerActivity = () => {
           paddingBottom: 20,
         }}
       >
-{/*         <FlatList
+        <FlatList
           style={{ width: "80%" }}
           data={data}
           renderItem={renderItem}
           keyExtractor={(item) => item.id}
-        /> */}
+        />
       </View>
       <View
         style={{ height: "30%", justifyContent: "flex-end", width: "100%" }}
@@ -109,8 +108,7 @@ const PlannerActivity = () => {
             <Image
               style={{ height: 20, width: 20, marginRight: 5 }}
               source={{
-                uri:
-                  "https://windu.s3.us-east-2.amazonaws.com/assets/mobile/yellow_elipsis.png",
+                uri: "https://windu.s3.us-east-2.amazonaws.com/assets/mobile/yellow_elipsis.png",
               }}
               resizeMode="contain"
             />
@@ -137,19 +135,17 @@ const PlannerActivity = () => {
           highlightDateNameStyle={{ color: "#4E35C2" }}
           disabledDateNameStyle={{ color: "grey" }}
           disabledDateNumberStyle={{ color: "grey" }}
-          // iconLeft={require('./img/left-arrow.png')}
-          //  iconRight={require('./img/right-arrow.png')}
           iconContainer={{ flex: 0.1 }}
           scrollable={true}
           selectedDate={moment()}
           onDateSelected={handleChange}
         />
-{/*         <OverlayMenu
+        <OverlayMenu
           onPress={handleMenuItemSelect}
           options={[{ label: "Plan Activity", id: "plan" }]}
           visible={showMenu}
           onClose={() => setShowMenu(false)}
-        /> */}
+        />
       </View>
       <PlanActivityModal
         onclose={() => setShowPlanModal(false)}

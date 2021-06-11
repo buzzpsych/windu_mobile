@@ -22,9 +22,9 @@ import { START_ACTIVITY } from "../../../graphql/subscriptions/startActivity";
 import { STOP_ACTIVITY as STOP_ACTIVITY_SUB } from "../../../graphql/subscriptions/stopActivity";
 import { STOP_ACTIVITY } from "../../../graphql/mutations/activity/stopActivity";
 import { PAUSE_ACTIVITY } from "../../../graphql/mutations/activity/pauseActivity";
+import { GET_PAUSED_ACTIVITY } from "../../../graphql/queries/activity/getPausedActivity";
 import Button from "../../../components/Button";
 import { useRecoilState, useRecoilValue } from "recoil";
-import { updateContinueActivityList } from "../../../common/cacheUtilities";
 import { playImg, pauseImg, stopImg } from "../../../common/constants";
 import { activeActivityState } from "../../../recoil/atoms/activity";
 import { userState } from "../../../recoil/atoms/user";
@@ -72,9 +72,11 @@ const Timer = () => {
       toast.show(`${pauseActivity.title} paused`, { type: "success" });
     },
     onError: (error) => toast.show(error, { type: "error" }),
-    update: (cache, { data: { pauseActivity } }) => {
-      updateContinueActivityList(cache, pauseActivity, "paused");
-    },
+    refetchQueries: [
+      {
+        query: GET_PAUSED_ACTIVITY,
+      },
+    ],
   });
 
   const { data: startActivityData, error: startActivityError } =
@@ -99,6 +101,7 @@ const Timer = () => {
   React.useEffect(() => {
     if (stopActivityError) console.log(stopActivityError);
     if (stopActivityData) {
+      console.log("joinin subcription ", stopActivityData);
       const { stopActivity } = stopActivityData;
       const { created_by } = stopActivity;
       if (created_by._id === user._id && activity.active)

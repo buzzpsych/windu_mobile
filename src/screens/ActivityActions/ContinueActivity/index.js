@@ -13,6 +13,7 @@ import Item from "./Item";
 import { updateContinueActivityList } from "../../../common/cacheUtilities";
 import { GET_PAUSED_ACTIVITY } from "../../../graphql/queries/activity/getPausedActivity";
 import { CONTINUE_ACTIVITY } from "../../../graphql/mutations/activity/continueActivity";
+import { STOP_ACTIVITY } from "../../../graphql/mutations/activity/stopActivity";
 
 const ContinueActivity = ({ navigation }) => {
   const insets = useSafeAreaInsets();
@@ -44,9 +45,21 @@ const ContinueActivity = ({ navigation }) => {
     }
   );
 
+  const [stopActivity, { loading: stopping }] = useMutation(STOP_ACTIVITY, {
+    onCompleted: ({ stopActivity }) => {
+      toast.show(`${stopActivity.title} stopped`, { type: "success" });
+    },
+    onError: (error) => {
+      toast.show(String(error), { type: "error" });
+    },
+    update: (cache, { data: { stopActivity } }) => {
+      updateContinueActivityList(cache, stopActivity, "continue");
+    },
+  });
+
   const keyExtractor = (item) => item._id;
 
-  if (loading || continuing) {
+  if (loading || continuing || stopping) {
     return (
       <View
         style={{
@@ -61,6 +74,7 @@ const ContinueActivity = ({ navigation }) => {
   }
 
   const { getPausedActivity } = pausedActivityRequest;
+
   return (
     <View style={{ top: insets.top, backgroundColor: "#F0F2F5", flex: 1 }}>
       {size(getPausedActivity) <= 0 ? (
@@ -81,10 +95,14 @@ const ContinueActivity = ({ navigation }) => {
           keyExtractor={keyExtractor}
           data={getPausedActivity}
           renderItem={({ item }) => (
-            <Item item={item} continueActivity={continueActivity} />
+            <Item
+              item={item}
+              continueActivity={continueActivity}
+              stopActivity={stopActivity}
+            />
           )}
           renderScrollComponent={() => (
-            <RefreshControl onRefresh={refetch} refreshing={loading} />
+            <RefreshControl onRefresh={() => refetch()} refreshing={loading} />
           )}
         />
       )}

@@ -1,14 +1,13 @@
 import React from "react";
 import { Text, Image, View, TouchableOpacity, Alert } from "react-native";
 import { ListItem } from "react-native-elements";
-import { map } from "lodash";
+import { map, last } from "lodash";
 import moment from "moment";
 import utility from "../../../common/utility";
 import playIcon from "../../../../assets/play_svg.png";
 import checkIcon from "../../../../assets/check_svg.png";
 
-const Item = ({ item, continueActivity }) => {
-  console.log(item.title);
+const Item = ({ item, continueActivity, stopActivity }) => {
   const [expanded, setExpanded] = React.useState(false);
 
   const {
@@ -25,11 +24,14 @@ const Item = ({ item, continueActivity }) => {
     });
   };
 
-  /*   const handleStopActivity = (activity) => {
+  const handleStopActivity = (activity) => {
     const {
       _id,
       time: { paused },
     } = activity;
+
+    console.log(_id);
+    console.log(last(paused).time);
 
     stopActivity({
       variables: {
@@ -39,7 +41,7 @@ const Item = ({ item, continueActivity }) => {
         },
       },
     });
-  };  */
+  };
 
   const confirmContinue = (item) =>
     Alert.alert(item.title, "Do you want to continue the activity", [
@@ -48,6 +50,15 @@ const Item = ({ item, continueActivity }) => {
         style: "cancel",
       },
       { text: "Continue", onPress: () => handleContinueActivity(item._id) },
+    ]);
+
+  const confirmStop = (item) =>
+    Alert.alert(item.title, "Do you want to finish the activity", [
+      {
+        text: "Cancel",
+        style: "cancel",
+      },
+      { text: "Finish", onPress: () => handleStopActivity(item) },
     ]);
 
   return (
@@ -95,7 +106,7 @@ const Item = ({ item, continueActivity }) => {
               resizeMode="contain"
             />
           </TouchableOpacity>
-          <TouchableOpacity onPress={() => console.log("completed")}>
+          <TouchableOpacity onPress={() => confirmStop(item)}>
             <Image
               style={{ height: 30, width: 30 }}
               source={checkIcon}
