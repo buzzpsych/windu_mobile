@@ -1,155 +1,160 @@
 import React, { useState } from "react";
-import { View, Text, FlatList, Image } from "react-native";
+import {
+  View,
+  SectionList,
+  ActivityIndicator,
+  RefreshControl,
+  Dimensions,
+} from "react-native";
+import { Text } from "react-native-elements";
 import CalendarStrip from "react-native-calendar-strip";
+import { useQuery } from "@apollo/client";
 import moment from "moment";
-import Button from "../../../components/Button";
-import OverlayMenu from "../../../components/OverlayMenu";
+import _ from "lodash";
 import PlanActivityModal from "../../../components/PlanActivityModal";
-
-import { styles } from "../styles";
-
-const data = [
-  {
-    title: "Planned Activity",
-    project: "project ",
-  },
-  {
-    title: "Planned Activity",
-    project: "project ",
-  },
-  {
-    title: "Planned Activity",
-    project: "project ",
-  },
-  {
-    title: "Planned Activity",
-    project: "project ",
-  },
-  {
-    title: "Planned Activity",
-    project: "project ",
-  },
-  {
-    title: "Planned Activity",
-    project: "project ",
-  },
-  {
-    title: "Planned Activity",
-    project: "project ",
-  },
-];
+import { GET_PLANNED_ACTIVITY } from "../../../graphql/queries/activity/getPlannedActivity";
+import Item from "./Item";
 
 const PlannerActivity = () => {
   const [showMenu, setShowMenu] = useState(false);
-  const [showPlanModal, setShowPlanModal] = useState(false);
+  const [plannedActivities, setPlannedActivities] = useState([]);
+  const [selectedDate, setSelectedDate] = useState(null);
+  const modalizeRef = React.useRef();
+  const windowHeight = Dimensions.get("window").height;
 
-  const handleChange = (d) => {
-    console.log("Request date", d);
-  };
-  const handleMenuItemSelect = () => {
-    setShowPlanModal(true);
-    setShowMenu(false);
-  };
-  const renderItem = ({ item }) => (
-    <View
-      style={{
-        flexDirection: "row",
-        backgroundColor: "white",
-        marginBottom: 10,
-        width: "100%",
-        padding: 10,
-        justifyContent: "space-between",
-      }}
-    >
-      <View style={{ flexDirection: "row" }}>
-        <Image
-          style={{ height: 20, width: 20, marginRight: 5 }}
-          source={{
-            uri: "https://windu.s3.us-east-2.amazonaws.com/assets/mobile/clock_gray.png",
-          }}
-          resizeMode="contain"
-        />
-        <Text style={{ fontWeight: "bold" }}>{item.title}</Text>
-      </View>
-      <Text style={{ color: "#AFB0B1" }}>{item.project}</Text>
-    </View>
-  );
+  const { loading, data, refetch } = useQuery(GET_PLANNED_ACTIVITY, {
+    fetchPolicy: "cache-and-network",
+    onError: (error) => toast.show(String(error), { type: "error" }),
+  });
 
-  return (
-    <View style={[styles.page]}>
+  React.useEffect(() => {
+    if (data) {
+      const { getPlannedActivity } = data;
+      const dates = _.uniq(
+        _.flatMap(getPlannedActivity, (activity) => {
+          return moment(new Date(activity.planned_date)).format("MM/DD/YY");
+        })
+      );
+
+      const dataFormat = _.map(dates, (date, index) => {
+        return {
+          _id: index,
+          title: date,
+          data: _.filter(
+            getPlannedActivity,
+            (activity) =>
+              moment(new Date(activity.planned_date)).format("MM/DD/YY") ===
+              date
+          ),
+        };
+      });
+
+      setPlannedActivities(dataFormat);
+    }
+  }, [data]);
+
+  const handleChange = (date) => {
+    setSelectedDate(date);
+    modalizeRef.current?.open();
+  };
+
+  const keyExtractor = (item) => item._id;
+
+  const datesBlacklistFunc = (date) => {
+    return date.isoWeekday() === 6; // disable Saturdays
+  };
+
+  if (loading) {
+    return (
       <View
         style={{
-          width: "100%",
+          flex: 1,
+          justifyContent: "center",
           alignItems: "center",
-          paddingTop: 20,
-          height: "65%",
-          paddingBottom: 20,
         }}
       >
-        <FlatList
-          style={{ width: "80%" }}
-          data={data}
-          renderItem={renderItem}
-          keyExtractor={(item) => item.id}
-        />
+        <ActivityIndicator size="large" color="#F5A623" />
       </View>
-      <View
-        style={{ height: "30%", justifyContent: "flex-end", width: "100%" }}
-      >
+    );
+  }
+
+  return (
+    <View style={{ flex: 1 }}>
+      {_.size(plannedActivities) <= 0 ? (
         <View
           style={{
+            flex: 3,
             justifyContent: "center",
             alignContent: "center",
-            flexDirection: "row",
-            height: 50,
           }}
         >
-          <Button onPress={() => setShowMenu(true)}>
-            <Image
-              style={{ height: 20, width: 20, marginRight: 5 }}
-              source={{
-                uri: "https://windu.s3.us-east-2.amazonaws.com/assets/mobile/yellow_elipsis.png",
-              }}
-              resizeMode="contain"
-            />
-          </Button>
+          <Text h4 style={{ textAlign: "center", color: "#989898" }}>
+            No activities
+          </Text>
         </View>
-        <CalendarStrip
-          calendarAnimation={{ type: "sequence", duration: 30 }}
-          daySelectionAnimation={{
-            type: "border",
-            duration: 200,
-            borderWidth: 1,
-            borderHighlightColor: "#4E35C2",
-          }}
+      ) : (
+        <View
           style={{
-            height: 100,
-            paddingTop: 20,
-            paddingBottom: 10,
+            height: windowHeight - 220,
           }}
-          calendarHeaderStyle={{ color: "white" }}
-          calendarColor={"#F5A623"}
-          dateNumberStyle={{ color: "white" }}
-          dateNameStyle={{ color: "white" }}
-          highlightDateNumberStyle={{ color: "#4E35C2" }}
-          highlightDateNameStyle={{ color: "#4E35C2" }}
-          disabledDateNameStyle={{ color: "grey" }}
-          disabledDateNumberStyle={{ color: "grey" }}
-          iconContainer={{ flex: 0.1 }}
-          scrollable={true}
-          selectedDate={moment()}
-          onDateSelected={handleChange}
-        />
-        <OverlayMenu
-          onPress={handleMenuItemSelect}
-          options={[{ label: "Plan Activity", id: "plan" }]}
-          visible={showMenu}
-          onClose={() => setShowMenu(false)}
-        />
-      </View>
+        >
+          <SectionList
+            nestedScrollEnabled={true}
+            keyExtractor={keyExtractor}
+            sections={plannedActivities}
+            renderItem={({ item }) => <Item item={item} />}
+            renderSectionHeader={({ section: { title } }) => (
+              <Text
+                h4
+                style={{
+                  marginLeft: 20,
+                  height: 50,
+                  textAlignVertical: "center",
+                  color: "#989898",
+                }}
+              >
+                {title}
+              </Text>
+            )}
+            renderScrollComponent={() => (
+              <RefreshControl
+                onRefresh={() => refetch()}
+                refreshing={loading}
+              />
+            )}
+          />
+        </View>
+      )}
+      <CalendarStrip
+        calendarAnimation={{ type: "sequence", duration: 30 }}
+        daySelectionAnimation={{
+          type: "border",
+          duration: 200,
+          borderWidth: 1,
+          borderHighlightColor: "#4E35C2",
+        }}
+        style={{
+          height: 100,
+          paddingTop: 20,
+          paddingBottom: 10,
+        }}
+        calendarHeaderStyle={{ color: "white" }}
+        calendarColor={"#F5A623"}
+        dateNumberStyle={{ color: "white" }}
+        dateNameStyle={{ color: "white" }}
+        highlightDateNumberStyle={{ color: "#4E35C2" }}
+        highlightDateNameStyle={{ color: "#4E35C2" }}
+        disabledDateNameStyle={{ color: "grey" }}
+        disabledDateNumberStyle={{ color: "grey" }}
+        iconContainer={{ flex: 0.1 }}
+        scrollable={true}
+        selectedDate={moment()}
+        onDateSelected={handleChange}
+        datesBlacklist={datesBlacklistFunc}
+      />
       <PlanActivityModal
-        onclose={() => setShowPlanModal(false)}
-        visible={showPlanModal}
+        modalizeRef={modalizeRef}
+        selectedDate={selectedDate}
       />
     </View>
   );

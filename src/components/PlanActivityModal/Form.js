@@ -1,105 +1,131 @@
 import React, { useState } from "react";
-import { View, Text } from "react-native";
-import { Input, Chip } from "react-native-elements";
-import { Picker } from "@react-native-picker/picker";
+import { ActivityIndicator } from "react-native";
+import { Button, Card } from "react-native-elements";
+import { useQuery } from "@apollo/client";
+import DateTimePicker from "@react-native-community/datetimepicker";
+import { Field } from "formik";
 import moment from "moment";
-import Button from "../Button";
-import DatePicker from "react-native-datepicker";
-
+import { map, uniqBy, isEmpty } from "lodash";
+import TextInput from "../formikFields/TextInput";
+import { GET_PROJECTS } from "../../graphql/queries/project/getProjects";
 import { styles } from "../../common/styles";
+import { Picker } from "@react-native-picker/picker";
 
-const Form = () => {
-  const [date, setDate] = React.useState(moment());
-  const [openDatePicker, setOpenDatePicker] = React.useState(false);
+const sizePerPage = 10;
+const initialOffset = 0;
+const initialSearch = "";
 
-  const [fieldData, setFieldData] = useState({
-    title: "",
-    description: "",
-    project: "",
+const defaultProjectFilters = {
+  status: "",
+  sort: `{"updated_at": -1}`,
+  relationship: "",
+};
+
+const Form = ({ handleSubmit, setFieldValue, values, isSubmitting }) => {
+  const [queryParameters, setQueryParameters] = useState({
+    size: sizePerPage,
+    offset: initialOffset,
+    search: initialSearch,
+    filters: defaultProjectFilters,
   });
-  const handleChange = (field, value) => {
-    setFieldData({ ...fieldData, [field]: value });
+  const [projects, setProjects] = useState([]);
+  const [showCalendar, setShowCalendar] = useState(false);
+
+  const { loading: loadingProjects } = useQuery(GET_PROJECTS, {
+    variables: { input: queryParameters },
+    fetchPolicy: "cache-and-network",
+    onCompleted: ({ getProjects }) => {
+      setProjects(
+        uniqBy([...new Set([...projects, ...getProjects.data])], "_id")
+      );
+    },
+  });
+
+  const onChange = ({ type, nativeEvent }) => {
+    if (!isEmpty(nativeEvent)) {
+      setShowCalendar(false);
+      setFieldValue("planned_date", nativeEvent.timestamp);
+    }
+
+    if (type === "dismissed") setShowCalendar(false);
   };
 
-  const handleSubmit = () => {
-    console.log(fieldData);
-  };
   return (
-    <View
-      style={{
-        height: "100%",
-        alignItems: "center",
-        justifyContent: "center",
-        flex: 1,
+    <Card
+      containerStyle={{
+        borderRadius: 8,
+        paddingVertical: 20,
+        paddingHorizontal: 20,
       }}
     >
-      <Input
-        containerStyle={{ width: "80%" }}
+      <Field
         inputContainerStyle={{ borderBottomColor: "#F5A623" }}
-        placeholderTextColor="black"
-        labelStyle={{ color: "black" }}
-        label="Activity Title"
+        component={TextInput}
         placeholder="Title"
-        onChangeText={(v) => handleChange("title", v)}
+        label="Activity Title"
+        name="title"
       />
-      <Input
-        containerStyle={{ width: "80%" }}
-        placeholderTextColor="black"
+      <Field
         inputContainerStyle={{ borderBottomColor: "#F5A623" }}
-        labelStyle={{ color: "black" }}
-        label="Activity Description"
+        component={TextInput}
         placeholder="Description"
-        onChangeText={(v) => handleChange("description", v)}
+        label="Activity Description"
+        name="description"
       />
-
-      <Picker
-        selectedValue={fieldData.project}
-        style={{ height: 50, width: 150, marginBottom: 50 }}
-        onValueChange={(itemValue, itemIndex) =>
-          handleChange("project", itemValue)
-        }
-      >
-        <Picker.Item label="Java" value="java" />
-        <Picker.Item label="JavaScript" value="js" />
-      </Picker>
-      <View
-        style={{
-          flexDirection: "row",
-          alignContent: "center",
-          justifyContent: "center",
-          marginBottom: 50,
-        }}
-      >
-        <DatePicker
-          style={{ width: 200 }}
-          date={date}
-          mode="date"
-          placeholder="selected date"
-          format="MM/DD/YY"
-          minDate={moment()}
-          confirmBtnText="Confirm"
-          cancelBtnText="Cancel"
-          showIcon={false}
-          customStyles={{
-            dateIcon: {
-              position: "absolute",
-              left: 0,
-              top: 4,
-              marginLeft: 0,
-            },
-            dateInput: {
-              borderColor: "#F5A623",
-            },
-            // ... You can check the source to find the other keys.
-          }}
-          onDateChange={(date) => setDate(date)}
+      {loadingProjects ? (
+        <ActivityIndicator
+          size="large"
+          color="#F5A623"
+          style={{ height: 50, marginBottom: 20 }}
         />
-      </View>
-
-      <Button onPress={handleSubmit} styles={styles.button}>
-        <Text>Submit</Text>
-      </Button>
-    </View>
+      ) : (
+        <Picker
+          selectedValue={values.project}
+          style={{
+            height: 50,
+            width: 150,
+            marginBottom: 20,
+            alignSelf: "center",
+          }}
+          onValueChange={(itemValue) => setFieldValue("project", itemValue)}
+        >
+          {map(projects, (project) => (
+            <Picker.Item
+              key={project._id}
+              label={project.title}
+              value={project._id}
+            />
+          ))}
+        </Picker>
+      )}
+      <Button
+        title={moment(values.planned_date).format("MM/DD/YY")}
+        type="outline"
+        onPress={() => setShowCalendar(true)}
+        buttonStyle={{
+          marginBottom: 10,
+          width: "80%",
+          marginLeft: "auto",
+          marginRight: "auto",
+        }}
+      />
+      {showCalendar && (
+        <DateTimePicker
+          testID="dateTimePicker"
+          value={new Date(values.planned_date)}
+          mode={"date"}
+          display="default"
+          onChange={(value) => onChange(value)}
+          textColor={"red"}
+        />
+      )}
+      <Button
+        buttonStyle={styles.button}
+        onPress={() => handleSubmit()}
+        title="Create"
+        loading={isSubmitting}
+      />
+    </Card>
   );
 };
 export default Form;
