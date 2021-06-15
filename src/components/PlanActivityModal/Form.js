@@ -2,10 +2,10 @@ import React, { useState } from "react";
 import { ActivityIndicator } from "react-native";
 import { Button, Card } from "react-native-elements";
 import { useQuery } from "@apollo/client";
-import DateTimePicker from "@react-native-community/datetimepicker";
+import CalendarStrip from "react-native-calendar-strip";
 import { Field } from "formik";
 import moment from "moment";
-import { map, uniqBy, isEmpty } from "lodash";
+import { map, uniqBy } from "lodash";
 import TextInput from "../formikFields/TextInput";
 import { GET_PROJECTS } from "../../graphql/queries/project/getProjects";
 import { styles } from "../../common/styles";
@@ -41,13 +41,12 @@ const Form = ({ handleSubmit, setFieldValue, values, isSubmitting }) => {
     },
   });
 
-  const onChange = ({ type, nativeEvent }) => {
-    if (!isEmpty(nativeEvent)) {
-      setShowCalendar(false);
-      setFieldValue("planned_date", nativeEvent.timestamp);
-    }
+  const datesBlacklistFunc = (date) =>
+    moment(new Date(date)).isBefore(new Date());
 
-    if (type === "dismissed") setShowCalendar(false);
+  const onChange = (date) => {
+    setFieldValue("planned_date", date);
+    setShowCalendar(false);
   };
 
   return (
@@ -107,24 +106,48 @@ const Form = ({ handleSubmit, setFieldValue, values, isSubmitting }) => {
           width: "80%",
           marginLeft: "auto",
           marginRight: "auto",
+          borderColor: "#F5A623",
         }}
+        titleStyle={{ color: "#F5A623" }}
       />
       {showCalendar && (
-        <DateTimePicker
-          testID="dateTimePicker"
-          value={new Date(values.planned_date)}
-          mode={"date"}
-          display="default"
-          onChange={(value) => onChange(value)}
-          textColor={"red"}
+        <CalendarStrip
+          calendarAnimation={{ type: "sequence", duration: 30 }}
+          daySelectionAnimation={{
+            type: "border",
+            duration: 200,
+            borderWidth: 1,
+            borderHighlightColor: "#4E35C2",
+          }}
+          style={{
+            height: 100,
+            paddingTop: 20,
+            paddingBottom: 10,
+            marginTop: 20,
+          }}
+          calendarHeaderStyle={{ color: "white" }}
+          calendarColor={"#F5A623"}
+          dateNumberStyle={{ color: "white" }}
+          dateNameStyle={{ color: "white" }}
+          highlightDateNumberStyle={{ color: "#4E35C2" }}
+          highlightDateNameStyle={{ color: "#4E35C2" }}
+          disabledDateNameStyle={{ color: "grey" }}
+          disabledDateNumberStyle={{ color: "grey" }}
+          iconContainer={{ flex: 0.1 }}
+          scrollable={true}
+          selectedDate={moment(new Date())}
+          onDateSelected={onChange}
+          datesBlacklist={datesBlacklistFunc}
         />
       )}
-      <Button
-        buttonStyle={styles.button}
-        onPress={() => handleSubmit()}
-        title="Create"
-        loading={isSubmitting}
-      />
+      {!showCalendar && ( // disappear button when calendar is shown
+        <Button
+          buttonStyle={styles.button}
+          onPress={() => handleSubmit()}
+          title="Create"
+          loading={isSubmitting}
+        />
+      )}
     </Card>
   );
 };

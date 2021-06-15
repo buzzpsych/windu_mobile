@@ -7,7 +7,8 @@ import { upperFirst } from "lodash";
 import { Formik } from "formik";
 import moment from "moment";
 import { useRecoilValue } from "recoil";
-import { CREATE_ACTIVITY } from "../../graphql/mutations/activity/createActivity";
+import { PLAN_ACTIVITY } from "../../graphql/mutations/activity/planActivity";
+import { GET_PLANNED_ACTIVITY } from "../../graphql/queries/activity/getPlannedActivity";
 import Form from "./Form";
 import * as Yup from "yup";
 import { userState } from "../../recoil/atoms/user";
@@ -23,29 +24,30 @@ export const PlanActivityModal = ({ modalizeRef, selectedDate }) => {
   const user = useRecoilValue(userState);
   const windowHeight = Dimensions.get("window").height;
 
-  const [createActivity] = useMutation(CREATE_ACTIVITY, {
-    onCompleted: ({ createActivity }) => {
-      toast.show(`${createActivity.title} started`, { type: "success" });
+  const [planActivity] = useMutation(PLAN_ACTIVITY, {
+    onCompleted: ({ planActivity }) => {
+      toast.show(`${planActivity.title} started`, { type: "success" });
     },
     onError: (error) => toast.show(error, { type: "error" }),
+    refetchQueries: [
+      {
+        query: GET_PLANNED_ACTIVITY,
+      },
+    ],
   });
 
-  const onCreateActivity = (values) => {
-    const { title, description, project } = values;
+  const onPlanActivity = (values) => {
+    const { title, description, project, planned_date } = values;
     modalizeRef?.current?.close();
-    createActivity({
-      variables: {
-        input: {
-          created_by: user._id,
-          title: upperFirst(title),
-          description,
-          project,
-          date_start: moment.utc(),
-          latitude: null,
-          longitude: null,
-        },
-      },
-    });
+    const payload = {
+      planned_date: moment.utc(planned_date),
+      project,
+      description,
+      title: upperFirst(title),
+      created_by: user._id,
+    };
+
+    planActivity({ variables: { input: { ...payload } } });
   };
 
   const color = "#62C376";
@@ -85,7 +87,7 @@ export const PlanActivityModal = ({ modalizeRef, selectedDate }) => {
               project: null,
               planned_date: selectedDate,
             }}
-            onSubmit={onCreateActivity}
+            onSubmit={onPlanActivity}
             validationSchema={validationSchema}
           >
             {(props) => <Form {...props} />}

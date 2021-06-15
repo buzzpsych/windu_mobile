@@ -5,6 +5,7 @@ import {
   ActivityIndicator,
   RefreshControl,
   Dimensions,
+  SafeAreaView,
 } from "react-native";
 import { Text } from "react-native-elements";
 import CalendarStrip from "react-native-calendar-strip";
@@ -16,7 +17,6 @@ import { GET_PLANNED_ACTIVITY } from "../../../graphql/queries/activity/getPlann
 import Item from "./Item";
 
 const PlannerActivity = () => {
-  const [showMenu, setShowMenu] = useState(false);
   const [plannedActivities, setPlannedActivities] = useState([]);
   const [selectedDate, setSelectedDate] = useState(null);
   const modalizeRef = React.useRef();
@@ -30,6 +30,7 @@ const PlannerActivity = () => {
   React.useEffect(() => {
     if (data) {
       const { getPlannedActivity } = data;
+
       const dates = _.uniq(
         _.flatMap(getPlannedActivity, (activity) => {
           return moment(new Date(activity.planned_date)).format("MM/DD/YY");
@@ -60,9 +61,8 @@ const PlannerActivity = () => {
 
   const keyExtractor = (item) => item._id;
 
-  const datesBlacklistFunc = (date) => {
-    return date.isoWeekday() === 6; // disable Saturdays
-  };
+  const datesBlacklistFunc = (date) =>
+    moment(new Date(date)).isBefore(new Date());
 
   if (loading) {
     return (
@@ -79,7 +79,7 @@ const PlannerActivity = () => {
   }
 
   return (
-    <View style={{ flex: 1 }}>
+    <SafeAreaView style={{ flex: 1 }}>
       {_.size(plannedActivities) <= 0 ? (
         <View
           style={{
@@ -99,10 +99,11 @@ const PlannerActivity = () => {
           }}
         >
           <SectionList
-            nestedScrollEnabled={true}
             keyExtractor={keyExtractor}
             sections={plannedActivities}
-            renderItem={({ item }) => <Item item={item} />}
+            renderItem={({ item }) => {
+              return <Item item={item} />;
+            }}
             renderSectionHeader={({ section: { title } }) => (
               <Text
                 h4
@@ -148,7 +149,7 @@ const PlannerActivity = () => {
         disabledDateNumberStyle={{ color: "grey" }}
         iconContainer={{ flex: 0.1 }}
         scrollable={true}
-        selectedDate={moment()}
+        selectedDate={moment(new Date())}
         onDateSelected={handleChange}
         datesBlacklist={datesBlacklistFunc}
       />
@@ -156,7 +157,7 @@ const PlannerActivity = () => {
         modalizeRef={modalizeRef}
         selectedDate={selectedDate}
       />
-    </View>
+    </SafeAreaView>
   );
 };
 
