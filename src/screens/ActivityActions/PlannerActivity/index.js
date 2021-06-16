@@ -114,8 +114,11 @@ const PlannerActivity = () => {
 
   const keyExtractor = (item) => item._id;
 
-  const datesBlacklistFunc = (date) =>
-    moment(new Date(date)).isBefore(new Date());
+  const datesBlacklistFunc = (date) => {
+    const today = moment(new Date()).format("MM/DD/YY");
+    const calendarDate = moment(new Date(date)).format("MM/DD/YY");
+    return moment(calendarDate).isBefore(today);
+  };
 
   if (loading) {
     return (

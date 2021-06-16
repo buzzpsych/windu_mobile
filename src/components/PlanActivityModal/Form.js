@@ -47,8 +47,11 @@ const Form = ({
     },
   });
 
-  const datesBlacklistFunc = (date) =>
-    moment(new Date(date)).isBefore(new Date());
+  const datesBlacklistFunc = (date) => {
+    const today = moment(new Date()).format("MM/DD/YY");
+    const calendarDate = moment(new Date(date)).format("MM/DD/YY");
+    return moment(calendarDate).isBefore(today);
+  };
 
   const onChange = (date) => {
     setFieldValue("planned_date", date);

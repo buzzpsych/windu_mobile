@@ -8,7 +8,10 @@ const Item = ({ item, onRemove, onStart, onChangeDate }) => {
   const [expanded, setExpanded] = React.useState(false);
 
   const confirmStart = (item) => {
-    const isOutDate = moment(new Date(item.planned_date)).isBefore(new Date());
+    const today = moment(new Date()).format("MM/DD/YY");
+    const planned = moment(new Date(item.planned_date)).format("MM/DD/YY");
+
+    const isOutDate = moment(planned).isBefore(today);
 
     if (isOutDate) {
       toast.show("Date is expired, Please update the activity date", {
