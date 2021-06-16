@@ -3,17 +3,18 @@ import {
   View,
   SectionList,
   ActivityIndicator,
-  RefreshControl,
   Dimensions,
   SafeAreaView,
 } from "react-native";
 import { Text } from "react-native-elements";
 import CalendarStrip from "react-native-calendar-strip";
-import { useQuery } from "@apollo/client";
+import { useQuery, useMutation } from "@apollo/client";
 import moment from "moment";
 import _ from "lodash";
 import PlanActivityModal from "../../../components/PlanActivityModal";
 import { GET_PLANNED_ACTIVITY } from "../../../graphql/queries/activity/getPlannedActivity";
+import { REMOVE_ACTIVITY } from "../../../graphql/mutations/activity/removeActivity";
+import { START_PLAN_ACTIVITY } from "../../../graphql/mutations/activity/startPlanActivity";
 import Item from "./Item";
 
 const PlannerActivity = () => {
@@ -24,7 +25,31 @@ const PlannerActivity = () => {
 
   const { loading, data, refetch } = useQuery(GET_PLANNED_ACTIVITY, {
     fetchPolicy: "cache-and-network",
-    onError: (error) => toast.show(String(error), { type: "error" }),
+    onError: (error) => toast.show(String(error), { type: "danger" }),
+  });
+
+  const [removeActivity] = useMutation(REMOVE_ACTIVITY, {
+    onCompleted: ({ removeActivity }) => {
+      toast.show(`${removeActivity.title} removed`, { type: "success" });
+    },
+    refetchQueries: [
+      {
+        query: GET_PLANNED_ACTIVITY,
+      },
+    ],
+  });
+
+  const [startPlannedActivity] = useMutation(START_PLAN_ACTIVITY, {
+    onCompleted: ({ startPlannedActivity }) => {
+      toast.show(`${startPlannedActivity.title} started`, { type: "success" });
+      navigation.navigate("Timer");
+    },
+    onError: (error) => toast.show(String(error), { type: "danger" }),
+    refetchQueries: [
+      {
+        query: GET_PLANNED_ACTIVITY,
+      },
+    ],
   });
 
   React.useEffect(() => {
@@ -57,6 +82,25 @@ const PlannerActivity = () => {
   const handleChange = (date) => {
     setSelectedDate(date);
     modalizeRef.current?.open();
+  };
+
+  const onStart = (_id) => {
+    startPlannedActivity({
+      variables: {
+        input: {
+          activity: _id,
+          date_start: moment.utc(new Date()),
+        },
+      },
+    });
+  };
+
+  const onRemove = (_id) => {
+    removeActivity({
+      variables: {
+        activity: _id,
+      },
+    });
   };
 
   const keyExtractor = (item) => item._id;
@@ -99,10 +143,11 @@ const PlannerActivity = () => {
           }}
         >
           <SectionList
+            nestedScrollEnabled={true}
             keyExtractor={keyExtractor}
             sections={plannedActivities}
             renderItem={({ item }) => {
-              return <Item item={item} />;
+              return <Item item={item} onRemove={onRemove} onStart={onStart} />;
             }}
             renderSectionHeader={({ section: { title } }) => (
               <Text
@@ -117,12 +162,8 @@ const PlannerActivity = () => {
                 {title}
               </Text>
             )}
-            renderScrollComponent={() => (
-              <RefreshControl
-                onRefresh={() => refetch()}
-                refreshing={loading}
-              />
-            )}
+            refreshing={loading}
+            onRefresh={() => refetch()}
           />
         </View>
       )}

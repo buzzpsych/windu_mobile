@@ -1,42 +1,38 @@
 import React from "react";
-import { Text, Image, View, TouchableOpacity, Alert } from "react-native";
+import { Image, View, TouchableOpacity, Alert } from "react-native";
 import { ListItem, Icon } from "react-native-elements";
-import { map, last } from "lodash";
 import moment from "moment";
-import utility from "../../../common/utility";
 import playIcon from "../../../../assets/play_svg.png";
-import checkIcon from "../../../../assets/check_svg.png";
 
-const Item = ({ item }) => {
+const Item = ({ item, onRemove, onStart }) => {
   const [expanded, setExpanded] = React.useState(false);
 
-  const handleContinueActivity = (id) => {
-    setExpanded(false);
-  };
+  const confirmStart = (item) => {
+    const isOutDate = moment(new Date(item.planned_date)).isBefore(new Date());
 
-  const handleStopActivity = (activity) => {
-    const {
-      _id,
-      time: { paused },
-    } = activity;
-  };
+    if (isOutDate) {
+      toast.show("Date is expired, Please update the activity date", {
+        type: "info",
+      });
+      return;
+    }
 
-  const confirmContinue = (item) =>
-    Alert.alert(item.title, "Do you want to continue the activity", [
+    return Alert.alert(item.title, "Do you want to start the activity", [
       {
         text: "Cancel",
         style: "cancel",
       },
-      { text: "Continue", onPress: () => handleContinueActivity(item._id) },
+      { text: "Start", onPress: () => onStart(item._id) },
     ]);
+  };
 
-  const confirmStop = (item) =>
-    Alert.alert(item.title, "Do you want to finish the activity", [
+  const confirmRemove = (item) =>
+    Alert.alert(item.title, "Do you want to remove the activity", [
       {
         text: "Cancel",
         style: "cancel",
       },
-      { text: "Finish", onPress: () => handleStopActivity(item) },
+      { text: "Remove", onPress: () => onRemove(item._id) },
     ]);
 
   return (
@@ -82,7 +78,7 @@ const Item = ({ item }) => {
             size={30}
             onPress={() => console.log("hello")}
           />
-          <TouchableOpacity onPress={() => confirmContinue(item)}>
+          <TouchableOpacity onPress={() => confirmStart(item)}>
             <Image
               style={{ height: 30, width: 30 }}
               source={playIcon}
@@ -94,7 +90,7 @@ const Item = ({ item }) => {
             type="font-awesome"
             color="red"
             size={30}
-            onPress={() => console.log("hello")}
+            onPress={() => confirmRemove(item)}
           />
         </View>
       </ListItem>

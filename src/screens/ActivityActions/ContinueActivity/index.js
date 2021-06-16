@@ -1,11 +1,5 @@
 import React from "react";
-import {
-  View,
-  Text,
-  FlatList,
-  ActivityIndicator,
-  RefreshControl,
-} from "react-native";
+import { View, Text, FlatList, ActivityIndicator } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useQuery, useMutation } from "@apollo/client";
 import { size } from "lodash";
@@ -101,9 +95,8 @@ const ContinueActivity = ({ navigation }) => {
               stopActivity={stopActivity}
             />
           )}
-          renderScrollComponent={() => (
-            <RefreshControl onRefresh={() => refetch()} refreshing={loading} />
-          )}
+          refreshing={loading}
+          onRefresh={() => refetch()}
         />
       )}
     </View>

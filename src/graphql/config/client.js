@@ -75,6 +75,11 @@ const cache = new InMemoryCache({
             return incoming;
           },
         },
+        getPlannedActivity: {
+          merge(_, incoming) {
+            return incoming;
+          },
+        },
       },
     },
   },
