@@ -1,10 +1,10 @@
 import React from "react";
 import { Image, View, TouchableOpacity, Alert } from "react-native";
-import { ListItem, Icon } from "react-native-elements";
+import { ListItem, Icon, Text } from "react-native-elements";
 import moment from "moment";
 import playIcon from "../../../../assets/play_svg.png";
 
-const Item = ({ item, onRemove, onStart }) => {
+const Item = ({ item, onRemove, onStart, onChangeDate }) => {
   const [expanded, setExpanded] = React.useState(false);
 
   const confirmStart = (item) => {
@@ -50,6 +50,7 @@ const Item = ({ item, onRemove, onStart }) => {
             <ListItem.Title>{item.title}</ListItem.Title>
             <ListItem.Subtitle>{item.description}</ListItem.Subtitle>
           </ListItem.Content>
+          <Text>{item.project.title || "No project"}</Text>
         </>
       }
       isExpanded={expanded}
@@ -76,7 +77,7 @@ const Item = ({ item, onRemove, onStart }) => {
             type="font-awesome"
             color="#F5A623"
             size={30}
-            onPress={() => console.log("hello")}
+            onPress={() => onChangeDate(item)}
           />
           <TouchableOpacity onPress={() => confirmStart(item)}>
             <Image

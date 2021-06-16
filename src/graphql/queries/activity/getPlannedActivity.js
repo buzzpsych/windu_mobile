@@ -7,6 +7,10 @@ export const GET_PLANNED_ACTIVITY = gql`
       planned_date
       title
       description
+      project {
+        _id
+        title
+      }
     }
   }
 `;

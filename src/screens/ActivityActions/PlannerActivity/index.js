@@ -20,6 +20,7 @@ import Item from "./Item";
 const PlannerActivity = () => {
   const [plannedActivities, setPlannedActivities] = useState([]);
   const [selectedDate, setSelectedDate] = useState(null);
+  const [activitySelected, setActivitySelected] = useState(null);
   const modalizeRef = React.useRef();
   const windowHeight = Dimensions.get("window").height;
 
@@ -79,9 +80,12 @@ const PlannerActivity = () => {
     }
   }, [data]);
 
+  const onOpen = () => modalizeRef.current?.open();
+
   const handleChange = (date) => {
     setSelectedDate(date);
-    modalizeRef.current?.open();
+    setActivitySelected(null);
+    onOpen();
   };
 
   const onStart = (_id) => {
@@ -101,6 +105,11 @@ const PlannerActivity = () => {
         activity: _id,
       },
     });
+  };
+
+  const onChangeDate = (item) => {
+    setActivitySelected(item);
+    onOpen();
   };
 
   const keyExtractor = (item) => item._id;
@@ -147,7 +156,14 @@ const PlannerActivity = () => {
             keyExtractor={keyExtractor}
             sections={plannedActivities}
             renderItem={({ item }) => {
-              return <Item item={item} onRemove={onRemove} onStart={onStart} />;
+              return (
+                <Item
+                  item={item}
+                  onRemove={onRemove}
+                  onStart={onStart}
+                  onChangeDate={onChangeDate}
+                />
+              );
             }}
             renderSectionHeader={({ section: { title } }) => (
               <Text
@@ -197,6 +213,7 @@ const PlannerActivity = () => {
       <PlanActivityModal
         modalizeRef={modalizeRef}
         selectedDate={selectedDate}
+        activitySelected={activitySelected}
       />
     </SafeAreaView>
   );

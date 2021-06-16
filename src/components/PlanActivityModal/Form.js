@@ -21,7 +21,13 @@ const defaultProjectFilters = {
   relationship: "",
 };
 
-const Form = ({ handleSubmit, setFieldValue, values, isSubmitting }) => {
+const Form = ({
+  handleSubmit,
+  setFieldValue,
+  values,
+  isSubmitting,
+  isEditing,
+}) => {
   const [queryParameters, setQueryParameters] = useState({
     size: sizePerPage,
     offset: initialOffset,
@@ -63,6 +69,7 @@ const Form = ({ handleSubmit, setFieldValue, values, isSubmitting }) => {
         placeholder="Title"
         label="Activity Title"
         name="title"
+        disabled={isEditing}
       />
       <Field
         inputContainerStyle={{ borderBottomColor: "#F5A623" }}
@@ -70,6 +77,7 @@ const Form = ({ handleSubmit, setFieldValue, values, isSubmitting }) => {
         placeholder="Description"
         label="Activity Description"
         name="description"
+        disabled={isEditing}
       />
       {loadingProjects ? (
         <ActivityIndicator
@@ -80,6 +88,7 @@ const Form = ({ handleSubmit, setFieldValue, values, isSubmitting }) => {
       ) : (
         <Picker
           selectedValue={values.project}
+          enabled={!isEditing}
           style={{
             height: 50,
             width: 150,
@@ -140,11 +149,12 @@ const Form = ({ handleSubmit, setFieldValue, values, isSubmitting }) => {
           datesBlacklist={datesBlacklistFunc}
         />
       )}
+
       {!showCalendar && ( // disappear button when calendar is shown
         <Button
           buttonStyle={styles.button}
           onPress={() => handleSubmit()}
-          title="Create"
+          title={isEditing ? "Save" : "Create"}
           loading={isSubmitting}
         />
       )}

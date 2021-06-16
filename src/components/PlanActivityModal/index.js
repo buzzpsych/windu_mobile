@@ -3,12 +3,13 @@ import { View, Dimensions } from "react-native";
 import { Text } from "react-native-elements";
 import { Modalize } from "react-native-modalize";
 import { useMutation } from "@apollo/client";
-import { upperFirst } from "lodash";
+import { upperFirst, isEmpty } from "lodash";
 import { Formik } from "formik";
 import moment from "moment";
 import { useRecoilValue } from "recoil";
 import { PLAN_ACTIVITY } from "../../graphql/mutations/activity/planActivity";
 import { GET_PLANNED_ACTIVITY } from "../../graphql/queries/activity/getPlannedActivity";
+import { CHANGE_DATE_PLAN_ACTIVITY } from "../../graphql/mutations/activity/planDateChange";
 import Form from "./Form";
 import * as Yup from "yup";
 import { userState } from "../../recoil/atoms/user";
@@ -20,7 +21,11 @@ const validationSchema = Yup.object().shape({
   project: Yup.string().required("This field is required"),
 });
 
-export const PlanActivityModal = ({ modalizeRef, selectedDate }) => {
+export const PlanActivityModal = ({
+  modalizeRef,
+  selectedDate,
+  activitySelected,
+}) => {
   const user = useRecoilValue(userState);
   const windowHeight = Dimensions.get("window").height;
 
@@ -29,6 +34,17 @@ export const PlanActivityModal = ({ modalizeRef, selectedDate }) => {
       toast.show(`${planActivity.title} started`, { type: "success" });
     },
     onError: (error) => toast.show(error, { type: "error" }),
+    refetchQueries: [
+      {
+        query: GET_PLANNED_ACTIVITY,
+      },
+    ],
+  });
+
+  const [plannedActivityDateChange] = useMutation(CHANGE_DATE_PLAN_ACTIVITY, {
+    onError: (error) => {
+      toast.show(error, { type: "error" });
+    },
     refetchQueries: [
       {
         query: GET_PLANNED_ACTIVITY,
@@ -48,6 +64,16 @@ export const PlanActivityModal = ({ modalizeRef, selectedDate }) => {
     };
 
     planActivity({ variables: { input: { ...payload } } });
+  };
+
+  const onChangeDate = (values) => {
+    const { planned_date } = values;
+    plannedActivityDateChange({
+      variables: {
+        activity: activitySelected._id,
+        date: moment.utc(new Date(planned_date)),
+      },
+    });
   };
 
   const color = "#62C376";
@@ -82,15 +108,21 @@ export const PlanActivityModal = ({ modalizeRef, selectedDate }) => {
         >
           <Formik
             initialValues={{
-              title: "",
-              description: "",
-              project: null,
-              planned_date: selectedDate,
+              title: activitySelected?.title || "",
+              description: activitySelected?.description || "",
+              project: activitySelected?.project._id || null,
+              planned_date: activitySelected?.planned_date || selectedDate,
             }}
-            onSubmit={onPlanActivity}
+            onSubmit={(values) =>
+              !isEmpty(activitySelected)
+                ? onChangeDate(values)
+                : onPlanActivity(values)
+            }
             validationSchema={validationSchema}
           >
-            {(props) => <Form {...props} />}
+            {(props) => (
+              <Form {...props} isEditing={!isEmpty(activitySelected)} />
+            )}
           </Formik>
         </View>
       </View>
