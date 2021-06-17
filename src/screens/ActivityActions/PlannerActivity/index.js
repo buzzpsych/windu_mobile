@@ -3,7 +3,6 @@ import {
   View,
   SectionList,
   ActivityIndicator,
-  Dimensions,
   SafeAreaView,
 } from "react-native";
 import { Text } from "react-native-elements";
@@ -22,7 +21,6 @@ const PlannerActivity = () => {
   const [selectedDate, setSelectedDate] = useState(null);
   const [activitySelected, setActivitySelected] = useState(null);
   const modalizeRef = React.useRef();
-  const windowHeight = Dimensions.get("window").height;
 
   const { loading, data, refetch } = useQuery(GET_PLANNED_ACTIVITY, {
     fetchPolicy: "cache-and-network",
@@ -139,7 +137,7 @@ const PlannerActivity = () => {
       {_.size(plannedActivities) <= 0 ? (
         <View
           style={{
-            flex: 3,
+            flex: 2.5,
             justifyContent: "center",
             alignContent: "center",
           }}
@@ -151,7 +149,7 @@ const PlannerActivity = () => {
       ) : (
         <View
           style={{
-            height: windowHeight - 220,
+            flex: 2.5,
           }}
         >
           <SectionList
@@ -195,7 +193,7 @@ const PlannerActivity = () => {
           borderHighlightColor: "#4E35C2",
         }}
         style={{
-          height: 100,
+          flex: 0.5,
           paddingTop: 20,
           paddingBottom: 10,
         }}
