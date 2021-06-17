@@ -1,10 +1,5 @@
 import React from "react";
-import {
-  View,
-  RefreshControl,
-  FlatList,
-  ActivityIndicator,
-} from "react-native";
+import { View, FlatList, ActivityIndicator } from "react-native";
 import { Text } from "react-native-elements";
 import { useLazyQuery, useSubscription } from "@apollo/client";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -104,9 +99,8 @@ const List = () => {
           keyExtractor={keyExtractor}
           data={activeTimers}
           renderItem={({ item }) => <AvatarTimer timer={item} />}
-          renderScrollComponent={() => (
-            <RefreshControl onRefresh={refetch} refreshing={loading} />
-          )}
+          refreshing={loading}
+          onRefresh={() => refetch()}
         />
       )}
     </View>

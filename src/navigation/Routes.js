@@ -1,10 +1,11 @@
 import React from "react";
-import { ActivityIndicator, View } from "react-native";
+import { View, Image } from "react-native";
 import { NavigationContainer } from "@react-navigation/native";
 import { useLazyQuery } from "@apollo/client";
 import { WrapperMainStack } from "./MainStack";
 import { AuthStackScreens } from "./AuthStack";
 import { useRecoilState } from "recoil";
+import { debounce } from "lodash";
 import { navigationRef } from "../common/rootNavigation";
 import { GET_USER } from "../graphql/queries/user/getUser";
 import { userState } from "../recoil/atoms/user";
@@ -18,7 +19,7 @@ export const Routes = ({ setNavState }) => {
     fetchPolicy: "cache-and-network",
     onCompleted: ({ getUser }) => {
       setUser(getUser);
-      setLoading(false);
+      delayedLoading();
     },
     onError: () => {
       setUser(null);
@@ -26,13 +27,17 @@ export const Routes = ({ setNavState }) => {
     },
   });
 
+  const delayedLoading = debounce(() => {
+    setLoading(false);
+  }, 4000);
+
   React.useEffect(() => {
     (async () => {
       const token = await readData("@token");
       if (token) getUser();
       if (!token) {
         setUser(null);
-        setLoading(false);
+        delayedLoading();
       }
     })();
   }, []);
@@ -46,7 +51,7 @@ export const Routes = ({ setNavState }) => {
           alignItems: "center",
         }}
       >
-        <ActivityIndicator size="large" color="#F5A623" />
+        <Image source={require("../../assets/windu_splash.gif")} />
       </View>
     );
   }

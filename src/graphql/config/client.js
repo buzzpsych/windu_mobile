@@ -67,6 +67,22 @@ const splitLink = split(
 
 const cache = new InMemoryCache({
   addTypename: false,
+  typePolicies: {
+    Query: {
+      fields: {
+        getPausedActivity: {
+          merge(_, incoming) {
+            return incoming;
+          },
+        },
+        getPlannedActivity: {
+          merge(_, incoming) {
+            return incoming;
+          },
+        },
+      },
+    },
+  },
 });
 
 const client = new ApolloClient({

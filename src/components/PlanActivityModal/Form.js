@@ -1,105 +1,167 @@
 import React, { useState } from "react";
-import { View, Text } from "react-native";
-import { Input, Chip } from "react-native-elements";
-import { Picker } from "@react-native-picker/picker";
+import { ActivityIndicator } from "react-native";
+import { Button, Card } from "react-native-elements";
+import { useQuery } from "@apollo/client";
+import CalendarStrip from "react-native-calendar-strip";
+import { Field } from "formik";
 import moment from "moment";
-import Button from "../Button";
-import DatePicker from "react-native-datepicker";
-
+import { map, uniqBy } from "lodash";
+import TextInput from "../formikFields/TextInput";
+import { GET_PROJECTS } from "../../graphql/queries/project/getProjects";
 import { styles } from "../../common/styles";
+import { Picker } from "@react-native-picker/picker";
 
-const Form = () => {
-  const [date, setDate] = React.useState(moment());
-  const [openDatePicker, setOpenDatePicker] = React.useState(false);
+const sizePerPage = 10;
+const initialOffset = 0;
+const initialSearch = "";
 
-  const [fieldData, setFieldData] = useState({
-    title: "",
-    description: "",
-    project: "",
+const defaultProjectFilters = {
+  status: "",
+  sort: `{"updated_at": -1}`,
+  relationship: "",
+};
+
+const Form = ({
+  handleSubmit,
+  setFieldValue,
+  values,
+  isSubmitting,
+  isEditing,
+}) => {
+  const [queryParameters, setQueryParameters] = useState({
+    size: sizePerPage,
+    offset: initialOffset,
+    search: initialSearch,
+    filters: defaultProjectFilters,
   });
-  const handleChange = (field, value) => {
-    setFieldData({ ...fieldData, [field]: value });
+  const [projects, setProjects] = useState([]);
+  const [showCalendar, setShowCalendar] = useState(false);
+
+  const { loading: loadingProjects } = useQuery(GET_PROJECTS, {
+    variables: { input: queryParameters },
+    fetchPolicy: "cache-and-network",
+    onCompleted: ({ getProjects }) => {
+      setProjects(
+        uniqBy([...new Set([...projects, ...getProjects.data])], "_id")
+      );
+    },
+  });
+
+  const datesBlacklistFunc = (date) => {
+    const today = moment(new Date()).format("MM/DD/YY");
+    const calendarDate = moment(new Date(date)).format("MM/DD/YY");
+    return moment(calendarDate).isBefore(today);
   };
 
-  const handleSubmit = () => {
-    console.log(fieldData);
+  const onChange = (date) => {
+    setFieldValue("planned_date", date);
+    setShowCalendar(false);
   };
+
   return (
-    <View
-      style={{
-        height: "100%",
-        alignItems: "center",
-        justifyContent: "center",
-        flex: 1,
+    <Card
+      containerStyle={{
+        borderRadius: 8,
+        paddingVertical: 20,
+        paddingHorizontal: 20,
       }}
     >
-      <Input
-        containerStyle={{ width: "80%" }}
+      <Field
         inputContainerStyle={{ borderBottomColor: "#F5A623" }}
-        placeholderTextColor="black"
-        labelStyle={{ color: "black" }}
-        label="Activity Title"
+        component={TextInput}
         placeholder="Title"
-        onChangeText={(v) => handleChange("title", v)}
+        label="Activity Title"
+        name="title"
+        disabled={isEditing}
       />
-      <Input
-        containerStyle={{ width: "80%" }}
-        placeholderTextColor="black"
+      <Field
         inputContainerStyle={{ borderBottomColor: "#F5A623" }}
-        labelStyle={{ color: "black" }}
-        label="Activity Description"
+        component={TextInput}
         placeholder="Description"
-        onChangeText={(v) => handleChange("description", v)}
+        label="Activity Description"
+        name="description"
+        disabled={isEditing}
       />
-
-      <Picker
-        selectedValue={fieldData.project}
-        style={{ height: 50, width: 150, marginBottom: 50 }}
-        onValueChange={(itemValue, itemIndex) =>
-          handleChange("project", itemValue)
-        }
-      >
-        <Picker.Item label="Java" value="java" />
-        <Picker.Item label="JavaScript" value="js" />
-      </Picker>
-      <View
-        style={{
-          flexDirection: "row",
-          alignContent: "center",
-          justifyContent: "center",
-          marginBottom: 50,
-        }}
-      >
-        <DatePicker
-          style={{ width: 200 }}
-          date={date}
-          mode="date"
-          placeholder="selected date"
-          format="MM/DD/YY"
-          minDate={moment()}
-          confirmBtnText="Confirm"
-          cancelBtnText="Cancel"
-          showIcon={false}
-          customStyles={{
-            dateIcon: {
-              position: "absolute",
-              left: 0,
-              top: 4,
-              marginLeft: 0,
-            },
-            dateInput: {
-              borderColor: "#F5A623",
-            },
-            // ... You can check the source to find the other keys.
-          }}
-          onDateChange={(date) => setDate(date)}
+      {loadingProjects ? (
+        <ActivityIndicator
+          size="large"
+          color="#F5A623"
+          style={{ height: 50, marginBottom: 20 }}
         />
-      </View>
+      ) : (
+        <Picker
+          selectedValue={values.project}
+          enabled={!isEditing}
+          style={{
+            height: 50,
+            width: 150,
+            marginBottom: 20,
+            alignSelf: "center",
+          }}
+          onValueChange={(itemValue) => setFieldValue("project", itemValue)}
+        >
+          {map(projects, (project) => (
+            <Picker.Item
+              key={project._id}
+              label={project.title}
+              value={project._id}
+            />
+          ))}
+        </Picker>
+      )}
+      <Button
+        title={moment(values.planned_date).format("MM/DD/YY")}
+        type="outline"
+        onPress={() => setShowCalendar(true)}
+        buttonStyle={{
+          marginBottom: 10,
+          width: "80%",
+          marginLeft: "auto",
+          marginRight: "auto",
+          borderColor: "#F5A623",
+        }}
+        titleStyle={{ color: "#F5A623" }}
+      />
+      {showCalendar && (
+        <CalendarStrip
+          calendarAnimation={{ type: "sequence", duration: 30 }}
+          daySelectionAnimation={{
+            type: "border",
+            duration: 200,
+            borderWidth: 1,
+            borderHighlightColor: "#4E35C2",
+          }}
+          style={{
+            height: 100,
+            paddingTop: 20,
+            paddingBottom: 10,
+            marginTop: 20,
+          }}
+          calendarHeaderStyle={{ color: "white" }}
+          calendarColor={"#F5A623"}
+          dateNumberStyle={{ color: "white" }}
+          dateNameStyle={{ color: "white" }}
+          highlightDateNumberStyle={{ color: "#4E35C2" }}
+          highlightDateNameStyle={{ color: "#4E35C2" }}
+          disabledDateNameStyle={{ color: "grey" }}
+          disabledDateNumberStyle={{ color: "grey" }}
+          iconContainer={{ flex: 0.1 }}
+          scrollable={true}
+          selectedDate={moment(values.planned_date)}
+          onDateSelected={onChange}
+          datesBlacklist={datesBlacklistFunc}
+        />
+      )}
 
-      <Button onPress={handleSubmit} styles={styles.button}>
-        <Text>Submit</Text>
-      </Button>
-    </View>
+      {!showCalendar && ( // disappear button when calendar is shown
+        <Button
+          buttonStyle={styles.button}
+          onPress={() => handleSubmit()}
+          title={isEditing ? "Save" : "Create"}
+          loading={isSubmitting}
+        />
+      )}
+    </Card>
   );
 };
 export default Form;

@@ -22,6 +22,7 @@ import { START_ACTIVITY } from "../../../graphql/subscriptions/startActivity";
 import { STOP_ACTIVITY as STOP_ACTIVITY_SUB } from "../../../graphql/subscriptions/stopActivity";
 import { STOP_ACTIVITY } from "../../../graphql/mutations/activity/stopActivity";
 import { PAUSE_ACTIVITY } from "../../../graphql/mutations/activity/pauseActivity";
+import { GET_PAUSED_ACTIVITY } from "../../../graphql/queries/activity/getPausedActivity";
 import Button from "../../../components/Button";
 import { useRecoilState, useRecoilValue } from "recoil";
 import { playImg, pauseImg, stopImg } from "../../../common/constants";
@@ -71,6 +72,11 @@ const Timer = () => {
       toast.show(`${pauseActivity.title} paused`, { type: "success" });
     },
     onError: (error) => toast.show(error, { type: "error" }),
+    refetchQueries: [
+      {
+        query: GET_PAUSED_ACTIVITY,
+      },
+    ],
   });
 
   const { data: startActivityData, error: startActivityError } =
