@@ -147,7 +147,7 @@ const Form = ({
           disabledDateNumberStyle={{ color: "grey" }}
           iconContainer={{ flex: 0.1 }}
           scrollable={true}
-          selectedDate={moment(new Date())}
+          selectedDate={moment(values.planned_date)}
           onDateSelected={onChange}
           datesBlacklist={datesBlacklistFunc}
         />
