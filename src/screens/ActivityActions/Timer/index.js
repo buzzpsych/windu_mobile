@@ -101,7 +101,6 @@ const Timer = () => {
   React.useEffect(() => {
     if (stopActivityError) console.log(stopActivityError);
     if (stopActivityData) {
-      console.log("joinin subcription ", stopActivityData);
       const { stopActivity } = stopActivityData;
       const { created_by } = stopActivity;
       if (created_by._id === user._id && activity.active)

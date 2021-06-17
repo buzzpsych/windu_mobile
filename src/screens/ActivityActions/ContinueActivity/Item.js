@@ -30,9 +30,6 @@ const Item = ({ item, continueActivity, stopActivity }) => {
       time: { paused },
     } = activity;
 
-    console.log(_id);
-    console.log(last(paused).time);
-
     stopActivity({
       variables: {
         input: {
